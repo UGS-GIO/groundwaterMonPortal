@@ -1,22 +1,17 @@
 ---
-name: Create document with static text for menu items
+name: Add Data to Existing Layers/Database
 about: This is for Phase 1 - Project Planning
-title: ''
-labels: ''
-assignees: ''
+title: I need to add some data to this application
+labels: new data
+assignees: marthajensen
 
 ---
 
-Things to include in [document ](https://github.com/UGS-GIO/repo/wiki/About-Panel-(for-review))(see qFaults application for good template):
-- [ ] About Application (required)
-- [ ] Related Information (e.g. links)
-- [ ] Database Contents (optional - also can be in own panel)
-- [ ] Background & Acknowledgments (optional - also can be in own panel)
-- [ ] Contacts (required - also can be in own panel)
-- [ ] Disclaimer (also can be in own panel)
-- [ ] Application Instructions
+**Description of data you're adding to an existing layer/database**
+A clear and concise description of the data you're adding.
 
-Have this [document ](https://github.com/UGS-GIO/repo/wiki/About-Panel-(for-review))reviewed by the following people BEFORE submitting to developer
-- [ ] Reviewed by Product Manager ()
-- [ ] Reviewed by Program Manager ()
-- [ ] Reviewed by Technical Reviewer (Steph C)
+**Once you submit this issue, your data will be reviewed and checked off by the following people (using Github):**
+-Product Manager
+-Data Manager
+-Technical Reviewer (only the text within the database/app: if it's in full sentence format)
+-Web Services Manager
