@@ -1,8 +1,9 @@
 ---
 name: Add Data to Existing Layers/Database
-about: This is for Phase 1 - Project Planning
+about: Use this when you need to add more data to existing layers/database in the
+  app
 title: I need to add some data to this application
-labels: new data
+labels: ''
 assignees: marthajensen
 
 ---
