@@ -1,0 +1,2506 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+	<link rel="shortcut icon" type="image/jpg" href="favicon.ico"/>
+    <title>
+      Groundwater Monitoring Portal
+    </title>
+
+<!-- 	<script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.js"></script>
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.css" /> -->
+
+	<link rel="stylesheet" href="js/select2-4.0.3/css/select2.css" type="text/css">
+	<link rel="stylesheet" href="css/tablesorter/style.css" type="text/css">
+	<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script type="text/javascript" src="js/select2-4.0.3/js/select2.js"></script>
+	<script type="text/javascript" src="js/tablesorter/jquery.tablesorter.min.js"></script>
+	<script type="text/javascript" src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+	<script type="text/javascript" src="https://www.amcharts.com/lib/3/serial.js"></script>
+	<script type="text/javascript" src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.21/esri/themes/light/main.css"/>
+    <script src="https://js.arcgis.com/4.21/"></script>
+
+    <script type="module" src="https://js.arcgis.com/calcite-components/1.0.0-beta.63/calcite.esm.js"></script>
+    <script nomodule="" src="https://js.arcgis.com/calcite-components/1.0.0-beta.63/calcite.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.0.0-beta.63/calcite.css" />
+    <script src="https://apis.google.com/js/client.js"></script>
+
+
+
+
+
+    <style>
+
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #viewDiv {
+        top:40px;
+        bottom:0px;
+        left: 0px;
+        right: 0px;
+        height: 100%;
+      }
+      .header-content {
+        display: block;
+        overflow: hidden;
+        margin:0;
+        margin-right: auto;
+        padding: 0px 8px;
+      }
+      #searchwin {
+        display: block;
+        position: absolute;
+        top: 160px;
+        left: 10px;
+      }
+
+      #infoDiv {
+        background-color: white;
+        color: black;
+		font-size: 14px;
+        padding: 10px;
+        width: 450px; 
+		max-height: 700px;
+		overflow-y: auto;
+      }
+
+	  #infoDiv2 {
+        background-color: white;
+        color: black;
+		font-size: 14px;
+        padding: 10px;
+        width: 600px; 
+		max-height: 250px;
+		overflow-y: auto;
+      }
+
+	  #helpDiv {
+        background-color: white;
+        color: black;
+		font-size: 14px;
+		line-height: 1.3;
+        padding: 10px;
+        width: 450px; 
+		max-height: 700px;
+		overflow-y: auto;
+      }
+
+	/* I made these to over-ride existing rules in the main.css file */
+	  .cd-panel {
+		  background-color: white;
+		  font-family: Verdana, Geneva, Tahoma, sans-serif;
+		  font-size: 11pt;
+		  color: #5a5a5a;
+	  }
+
+	  table.tablesorter {
+		  background-color: #edf5ff;
+	  }
+	  /* make legend WAY more narrow than default */
+	  .esri-legend, .gwlegend {
+		  width: 160px !important;
+	  }
+	  /* width of date rage inputs */
+	  .infoDivInput {
+		width: 130px;
+		height: 26px;
+	  }
+	/* download button sit low otherwise */
+	  #btnDownloadTable {
+		position: relative;
+		top: 20px;
+		left: 10px;
+	}
+
+	  .spinner {
+		height:25px;
+		width:25px;
+		margin:10px;
+		position:relative;
+		-webkit-animation: rotation .6s infinite linear;
+		-moz-animation: rotation .6s infinite linear;
+		-o-animation: rotation .6s infinite linear;
+		animation: rotation .6s infinite linear;
+		border-left:6px solid rgba(255,255,255,.4);
+		border-right:6px solid rgba(255,255,255,.4);
+		border-bottom:6px solid rgba(255,255,255,.4);
+		border-top:6px solid rgba(255,255,255,1);
+		border-radius:100%;
+	}
+
+	h1 {
+		font-family: Georgia, 'Times New Roman', Times, serif;
+		font-size: 18pt;
+		line-height: 1em;
+	}
+
+    </style>
+
+
+  
+
+
+<script>
+
+
+/*
+ISSUES TO FIX:
+
+-add a page title in a block
+x-the feature layers need to be redone and cleaned up
+-the php file needs its issues fix & memory issues on the server
+x-the image functions have issuex
+-lots of the queries are going to need to be converted from 
+
+	qtLoc.execute(qLoc, handleLocResults);
+	to
+	query.executeQueryJSON(msLocation,qLoc).then(handleLocResults)
+	and 
+	delete new QueryTask() line
+
+-lots of queries are erroring now because of '' issues on fields that change from integer to text
+-lots of styling issues still
+
+x-fix set location type drop down!!!!
+-convert all dojo.create elements to jquery!
+
+x-when advancing popup pane, details pane needs to change! (ie. find "view.popup.on("trigger-action, advance")
+x-style legend to be 180px wide (tried... wont work?)
+
+*/
+
+
+
+
+require([
+	"esri/Map", 
+	"esri/views/MapView",
+	"esri/layers/FeatureLayer",
+	"esri/widgets/Expand",
+	"esri/widgets/BasemapGallery",
+	"esri/widgets/Search",
+	"esri/rest/query",
+	"esri/rest/support/Query", 
+	"esri/tasks/QueryTask",
+	"esri/PopupTemplate",
+	"esri/widgets/Legend",
+	"esri/rest/support/StatisticDefinition",
+	"dojo",  // delete all dojo.create etc, use jquery and delete these TWO (dojo & dom-construct)
+	"dojo/dom-construct",
+	"dojo/promise/all",
+	"dojo/on"
+], (
+	Map, MapView, FeatureLayer, Expand, BasemapGallery, Search, query, Query, QueryTask, PopupTemplate, Legend, StatisticDefinition, dojo, domConstruct, all, on
+	) => {
+
+	var gl = {};
+	var chart;
+	var chartFlow;
+	var locations;
+	var sites;
+	var localAquifers;
+
+	var locIDs = "";
+	var siteIDs = "";
+	var flowIDs = "";
+
+	const map = new Map({
+		basemap: "topo-vector"
+	});
+
+	const view = new MapView({
+		container: "viewDiv",
+		map: map,
+		zoom: 7,
+		center: [-111.3, 39.4] // longitude, latitude
+	});
+
+
+	const resultsExpand = new Expand({
+		collapsedIconClass: "esri-icon-collapse",
+		expandIconClass: "esri-icon-expand",
+		expandTooltip: "Expand Site Details",
+		autoCollapse: true,
+		view: view,
+		content: infoDiv
+	});
+	// add an info div for slider
+	view.ui.add(resultsExpand, "top-right");
+
+	const tableExpand = new Expand({
+		collapsedIconClass: "esri-icon-collapse",
+		expandIconClass: "esri-icon-expand",
+		expandTooltip: "Expand Site Details",
+		autoCollapse: true,
+		view: view,
+		content: infoDiv2
+	});
+	// add an info div for slider
+	view.ui.add(tableExpand, "bottom-left");
+
+
+
+	// -----------------------------------            create the 2 map layers        ---------------------------------------------------------------
+
+
+
+
+	// define our services  (these should all be const)
+	const uri = "https://webmaps.geology.utah.gov";
+	const geomSvc = uri + "/arcgis/rest/services/Geometry/GeometryServer";
+
+	const msCasing = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/0";
+	const msScreen = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/1";
+	const msLith = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/2";
+	const msSite = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/3";
+	const msLocation = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/4";
+	const msProject = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/5";
+	const msPhyChem = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/6";
+	const msStates = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/7";
+	const msCounties = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/8";
+	const msLocalAquifer = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/9";
+	const msChars = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/10";
+	const msRAM = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/11";
+	const msReadings = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/12";
+	const msFlow = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/13";
+	const msPSW = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/14";
+	const msP2SW = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/15";
+	const msDataFiles = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/16";
+	const msNotes = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/17";
+
+
+
+	// set popup action to open details pane.   see view.popup.on("trigger-action") for function
+	var getDetailsAction = {
+		title: "Site Details",
+		id: "site-details",
+		// https://developers.arcgis.com/javascript/latest/guide/esri-icon-font/
+		className: "esri-icon-table"
+	};
+
+	const sitestemplate = {
+		actions: [getDetailsAction],
+		title: "Site Info",
+		content: 
+		"<span class='bold'>Name:</span> {name}<br />" +
+		"<span class='bold'>Wells:</span> {totalwellnumber}<br />"
+	};
+							
+	const siteareas = new FeatureLayer({
+		url: msSite,
+		id: "sites",
+		title:"sites",
+		outFields: ["name","totalwellnumber","siteid"],
+		//displayOnPan: false,
+		popupTemplate: sitestemplate,
+		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))",
+		//visible: true
+	});
+	map.add(siteareas);
+
+	const locationstemplate = {
+		actions: [getDetailsAction],
+		title: "Well Info",
+		content: 
+		"ID: {locationid} <br>" +
+		"Name: {locationname} <br>" +
+		"Type: {locationtype} <br>" +
+		"Description: {locationdesc} <br>" +
+		"Location: {county}, {state} <br>"
+	};
+
+	const welllocations = new FeatureLayer({
+		url: msLocation,
+		id: "well-locations",
+		title: "Well Locations",
+		outFields: ["locationid","locationtype","locationdesc", "county","state"],
+		popupTemplate: locationstemplate,
+		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))"
+	});
+	map.add(welllocations);
+
+	// use trigger action to open details pane (make only fire on mobile?)
+	view.popup.on("trigger-action", function(event) {
+		// Execute popup action if clicked		if (event.action.id === "site-details") {
+			console.log(view.popup.viewModel.selectedFeature);
+			var slayer = view.popup.viewModel.selectedFeature.sourceLayer.id;
+			if (slayer = "well-locations"){
+				var sid = view.popup.viewModel.selectedFeature.attributes.objectid;
+				LoadLocationData(sid);
+			} else if (slayer = "sites"){
+				var sid = view.popup.viewModel.selectedFeature.attributes.siteid;
+				LoadSiteAreaData(sid);
+			}
+			console.log(sid);
+			resultsExpand.expand();
+			//	map.infoWindow.hide();
+	});
+
+	// fires when popup opens (or use clicks arrows!)
+	view.popup.watch("selectedFeature", function(graphic) {
+		//resultsExpand.collapse();
+		if (graphic) {
+			console.log(graphic);  //graphic.layer.id
+			var slayer = view.popup.viewModel.selectedFeature.sourceLayer.id;
+			if (slayer = "well-locations"){
+				var sid = view.popup.viewModel.selectedFeature.attributes.objectid;
+				LoadLocationData(sid);
+			} else if (slayer = "sites"){
+				var sid = view.popup.viewModel.selectedFeature.attributes.siteid;
+				LoadSiteAreaData(sid);
+			}
+		}
+	});
+
+	// create & define the map legend
+	const legend = new Legend({
+		view: view,
+		declaredClass: "gwlegend",
+		title: "Map Symbol Legend",
+		//layerId: ? is below deprecated?
+		layerInfos: [
+			{layer: siteareas, title: "Site Areas"},
+			{layer: welllocations, title: "Locations"}
+		]
+	});
+
+	// Add widget to the bottom right corner of the view
+	view.ui.add(legend, "bottom-right");
+
+
+	var basemapGallery = new BasemapGallery({
+		view: view,
+		container: document.createElement("div")
+	});
+
+	var bgExpand = new Expand({
+		view: view,
+		content: basemapGallery
+	});
+
+	// close the expand whenever a basemap is selected
+	basemapGallery.watch("activeBasemap", function() {
+		var mobileSize =
+		view.heightBreakpoint === "xsmall" ||
+		view.widthBreakpoint === "xsmall";
+
+		if (mobileSize) {
+		bgExpand.collapse();
+		}
+	});
+	// Add the expando basemap to the top-right corner of the view
+	view.ui.add(bgExpand, "top-right");
+
+	// add help and instructions expand
+	const helpExpand = new Expand({
+		collapsedIconClass: "esri-icon-collapse",
+		expandIconClass: "esri-icon-question",
+		expandTooltip: "Expand Site Details",
+		autoCollapse: true,
+		view: view,
+		content: helpDiv
+	});
+	// add an info div for slider
+	view.ui.add(helpExpand, "top-right");
+
+
+
+	//   ---------------------------------------------------   search widget controls  --------------------------------------------------
+
+
+	
+	const searchWidget = new Search({
+          view: view,
+		  container: document.getElementById("locationSearch"),
+          allPlaceholder: "Search for spring, well or site area",
+          includeDefaultSources: false,
+          sources: [
+            {
+              layer: welllocations,
+              searchFields: ["locationname", "locationid"],
+              displayField: "locationname",
+              exactMatch: false,
+              outFields: ["*"],
+              name: "Spring/Well Locations",
+              placeholder: "PW07"
+            },
+            {
+              layer: siteareas,
+              searchFields: ["name ", "siteid"],
+              //suggestionTemplate: "{name}, Party: {Party}",
+              exactMatch: false,
+              outFields: ["*"],
+              placeholder: "Burbank Meadow",
+              name: "Site Areas",
+              //zoomScale: 500000,
+			  /*
+              resultSymbol: {
+                type: "picture-marker", // autocasts as new PictureMarkerSymbol()
+                url: "https://developers.arcgis.com/javascript/latest//sample-code/widgets-search-multiplesource/live/images/senate.png",
+                height: 36,
+                width: 36
+              }
+			  */
+            },
+
+			/*            
+			{
+              name: "ArcGIS World Geocoding Service",
+              placeholder: "example: Nuuk, GRL",
+              apiKey: "YOUR_API_KEY",
+              singleLineFieldName: "SingleLine",
+              locator: "https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer"
+            } */
+          ]
+        });
+		//view.ui.add(searchWidget, "top-left");
+		
+
+
+
+
+	//   ---------------------------------------------------   more info function controls  --------------------------------------------------
+
+	$("#btnDownload").click(function() {
+			if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
+				return;
+			
+			downloading = true;
+			$("#procMessage").text("Downloading Data...");
+			$("#divSpinner").show();
+			var fromdate = $("#fromDate").val();
+			var todate = $("#toDate").val();
+			var type = $("input[name='flowDownload']:checked").val();
+			
+			$.post("downloadData.php", { wellIDs: gl.locIDs, fromdate: fromdate, todate: todate, type: type }, function(data){
+				console.log(data); //return url
+				$("body").append("<iframe src='" + data + "' style='visibility:hidden;display:none' ></iframe>");
+			})
+			.fail(function() {
+				alert("Download Error");
+			})
+			.always(function() {
+				downloading = false;
+				$("#procMessage").text("Populating Graph...");
+				$("#divSpinner").hide();
+			})
+		});
+		
+		$("#btnDownloadTable").click(function() {
+			if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
+				return;
+			
+			downloading = true;
+			/* $("#procMessage").text("Downloading Data...");
+			$("#divSpinner").show(); */
+			var fromdate = $("#fromDateTable").val();
+			var todate = $("#toDateTable").val();
+			var type = $("input[name='flowDownloadTable']:checked").val();
+			console.log(gl);
+			$.post("downloadData.php", { siteIDs: gl.siteIDs, wellIDs: gl.locIDs, fromdate: fromdate, todate: todate, type: type }, function(data){
+				$("body").append("<iframe src='" + data + "' style='visibility:hidden;display:none;' ></iframe>");
+			})
+			.fail(function() {
+				alert("Download Error");
+			})
+			.always(function() {
+				downloading = false;
+				/* $("#procMessage").text("Populating Graph...");
+				$("#divSpinner").hide(); */
+			})
+		});
+		
+
+/*
+ 		function enterKeyPressed(event) {
+			if (event.keyCode == 13) {
+				console.log("Enter key is pressed");
+				doSearch();
+			} else {
+				return false;
+			}
+		} 
+		*/
+		
+		$("#btnDraw").click(function() {
+			map.graphics.clear();
+			selectionToolbar.activate(Draw.RECTANGLE);
+		});
+		
+		$("#searchButton").click(function() {
+			var strIn = "";
+			if(drawPoints.length > 0)
+			{
+				for(var i = 0; i < drawPoints.length; i++)
+				{
+					strIn += drawPoints[i] + ",";
+				}
+			}
+			else
+			{
+				for(var i = 0; i < locations.graphics.length; i++)
+				{
+					if(map.extent.contains(locations.graphics[i].geometry))
+					{
+						strIn += locations.graphics[i].attributes["objectid"] + ",";
+					}
+				}
+			}
+			
+			strIn = strIn.slice(0, -1);
+			
+			if(strIn.length <= 0)
+			{
+				alert("No visible points on the map.");
+				return;
+			}
+			
+			if(typeof(Storage) !== "undefined")
+			{
+				sessionStorage.whereString = "objectid IN (" + strIn + ")";
+			}
+			location.href = "locationSearch.html";
+		});
+		
+		$("#drawButton").click(function() {
+			map.graphics.clear();
+			selectionToolbar.activate(Draw.RECTANGLE);
+			$("#drawButton").css("background-color", "rgba(255,0,0,1)");
+			$("#cancelButton").show();
+		});
+		
+		$("#cancelButton").click(function() {
+			map.graphics.clear();
+			selectionToolbar.deactivate();
+			$("#drawButton").css("background-color", "rgba(40,40,40,1)");
+			$("#cancelButton").hide();
+		});
+		
+		var llyr = map.findLayerById('well-locations');
+		$("#Cores").click(function() {
+			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
+		});
+		
+		$("#Cuttings").click(function() {
+			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
+		});
+		
+		$("#Both").click(function() {
+			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
+		});
+		
+		$("#Other").click(function() {
+			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
+		});
+		
+		$("#settingsButton").click(function () {
+			$("#settingsButton").hide();
+			$("#settingsClose").show(0);
+			$("#settingsDiv").show(0);
+		});
+
+		$("#settingsClose").click(function () {
+			$("#settingsDiv").hide(0);
+			$("#settingsClose").hide(0);
+			$("#settingsButton").show(0);
+			$("#opacitySlider").hide(0);
+			$("#layerListDivHolder").hide(200);
+		});
+		
+		function toggleFind(evt) {
+			$("#selectionOptionsInner").toggle();
+			/* if ($('.mobileLayout').is(":visible")) {
+				if (evt != "startup") {
+					toggleMobileFind();
+				}
+			} */
+		}
+		
+
+
+		// when user hits enter key in location box, do search
+		$('#locationName, #siteName').keypress(function(e){
+			if(e.which == 13){   //Enter key pressed
+				console.log("Enter key was pressed");
+				doSearch();
+			}
+		});
+
+
+		// when user changes/selects project area or location type
+		// update the map without having to push search
+		$("#projectSelect").on('change', function(n) {
+			console.log(n.target.value);
+			$("#locationName").val("");
+			$("#siteName").val("");
+			$('#locationTypeSelect').val('').prop('selected', true);
+			$("#locationTypeSelect").trigger('change.select2');   // what does this do?!!!
+			// add definitionexpression here
+			switch(n.target.value) {
+				case "1":
+					var sql = "QWNetworkName = 'Snake Valley'";
+				break;
+				case "2":
+					var sql = "QWNetworkName = 'Ogden Valley'";
+				break;
+				case "3":
+					var sql = "QWNetworkName = 'Moab'";
+				break;
+				case 4:
+					var sql = "QWNetworkName = UGS-NGWMN";
+				break;
+				case "5":
+					var sql = "QWNetworkName = 'Snake Valley Wetlands'";
+				break;
+				case "6":
+					var sql = "QWNetworkName = 'Juab Valley'";
+				break;
+			} 
+			var llyr = map.findLayerById('well-locations');
+			llyr.definitionExpression = sql;
+		});
+		//console.log(projectSelect);
+
+
+
+//fix: hard code these options?  Or at least make the option box a calcite option box
+
+		// populate the select Location type combo dropdown (after load)
+		$(document).ready(function() {
+			getCombos();
+
+			$("#btnSearch").on('click', doSearch);
+			$("#btnClear").on('click', doClear);
+		});
+
+		function getCombos()
+		{
+			console.log("start getting options for 'select location type combo'");
+			let qtProj = new QueryTask(msPSW);
+			let qProj = new Query();
+				qProj.returnGeometry = false;
+				qProj.outFields = ["*"];
+				qProj.where = "1=1";
+			
+			let qtDataFiles = new QueryTask(msDataFiles);
+			let qDataFiles = new Query();
+				qDataFiles.returnGeometry = false;
+				qDataFiles.outFields = ["*"];
+				qDataFiles.where = "1=1";
+
+			let qtLA = new QueryTask(msLocalAquifer);
+			let qLA = new Query();
+				qLA.returnGeometry = false;
+				qLA.outFields = ["code, aquifername"];
+				qLA.orderByFields = ["code"];
+				qLA.where = "1=1";
+			
+			promises = new all([qtProj.execute(qProj, null), qtDataFiles.execute(qDataFiles, null), qtLA.execute(qLA, null)]);
+			promises.then(handleComboResults);
+		}
+		
+		function handleComboResults(results)
+		{
+			console.log(results);
+			var projects = results[0];
+			var dataFiles = results[1];
+			localAquifers = results[2];
+			
+	
+			var res = results[0].features;
+			gl.proj = res;
+
+			var blankOpt = document.createElement("option");
+			blankOpt.text = "";
+			blankOpt.value = "";
+			var lkp;
+			
+			var projectSelect = document.createElement("select");
+			projectSelect.id = "projectSelect";
+
+			projectSelect.add(blankOpt);
+			for(var i = 0; i < res.length; i++)
+			{
+				var option = document.createElement("option");
+				option.text = res[i].attributes.name;
+				option.value = res[i].attributes.objectid;
+				projectSelect.add(option);
+			}
+
+			document.getElementById("projectSelectAlt").appendChild(projectSelect);
+			$("#projectSelect").select2({
+				placeholder: "Select Project",
+				width: '100%',
+				minimumResultsForSearch: Infinity,
+				allowClear: true
+			});
+
+
+			var locationTypeSelect = document.createElement("select");
+			locationTypeSelect.id = "locationTypeSelect";
+			
+			res = results[1].features;
+			gl.DF = res;
+
+			locationTypeSelect.add(blankOpt);
+			for(var i = 0; i < res.length; i++)
+			{
+				var option = document.createElement("option");
+				option.text = res[i].attributes.dropdownvalue;
+				option.value = res[i].attributes.datatable;
+				locationTypeSelect.add(option);
+			}
+
+			//console.log(locationTypeSelect);
+			document.getElementById("locationTypeSelectAlt").appendChild(locationTypeSelect);
+			$("#locationTypeSelect").select2({
+				placeholder: "Select Location Type",
+				width: '100%',
+				minimumResultsForSearch: Infinity,
+				allowClear: true
+			});
+			// does what?
+			$("#locationTypeSelect").on('change', function(n) {
+				console.log("select the site location");
+				console.log(n.target.value);
+				$("#locationName").val("");
+				$("#siteName").val("");
+				$('#projectSelect').val('').prop('selected', true);
+				$("#projectSelect").trigger('change.select2');
+				// filter for drop down values
+				switch(n.target.value) {
+					case "flow":
+						var sql = "LocationType = 'Spring'";
+					break;
+					case "reading":
+						var sql = "LocationType = 'Well'";
+					break;
+					case "piez":
+						var sql = "WellType = 'Piezometer'";
+					break;
+				} 
+				var llyr = map.findLayerById('well-locations');
+				llyr.definitionExpression = sql;
+				/*
+				const query = welllocations.createQuery();
+				query.outFields = ["*"];
+				welllocations.queryFeatures(query).then((results) => {
+					console.log(result.features); // print the features to the console
+				});
+				*/
+			});
+			
+			$('#projectSelect').val('').prop('selected', true);
+			
+			toggleFind();
+		}
+		
+		/* function handleProjError(error)
+		{
+			console.log(error);
+		}
+		
+		function handleDFError(err)
+		{
+			console.log(err);
+		}
+		
+		function handleLAError(err)
+		{
+			console.log(err);
+		} */
+		
+		function getLocalAquifer(code)
+		{
+			for(var i = 0; i < localAquifers.features.length; i++)
+			{
+				if(localAquifers.features[i].attributes.Code == code)
+				{
+					return localAquifers.features[i].attributes.Name;
+				}
+			}
+			
+			return "";
+		}
+		
+		
+		function handleLithResults(results)
+		{
+			if(results.features.length <= 0)
+				return;
+			
+			var res = results.features[0].attributes;
+			if(res.maxunit == null && res.minunit == null)
+				$("#si").hide();
+			
+			$("#si").append(" (" + (res.maxunit != null ? res.maxunit : "") + "): " + (res.minfrom != null ? res.minfrom : "") + "-" + (res.maxto != null ? res.maxto : ""));
+			//$('.cd-panel').addClass('is-visible');
+			resultsExpand.expand();
+		}
+				
+		function handleNotesResults(results)
+		{
+			console.log(results);
+			if (results.features[0]){
+
+				//console.log(results);
+				var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': 'noteTableSing'}, 'locNotes1');
+				var headerArray = ["Date", "Note"];
+				
+				var thead = dojo.create('thead', null, table);
+				var row = dojo.create('tr', {'class':'huntTableHeader'}, thead);
+				for (var j=0; j<headerArray.length; j++) {
+					var thElement = dojo.create('th', {'class': 'tcol'+(j+1), 'id':'huntCol'+j, 'innerHTML':headerArray[j]}, row);
+				}
+
+				for(var i = 0; i < results.features.length; i++)
+				{
+				//$.each(huntTableArray, function (key, value) {
+					var obj = results.features[i].attributes;
+					var row2 = dojo.create('tr', {'class':'huntTableRow'}, 'noteTableSing');
+					if (obj.datetime !== undefined) {
+						//dojo.create('td', {'class':'tableData', 'innerHTML': obj.DateTime}, row2, 'last');
+						dojo.create('td', {'class':'tableData', 'innerHTML': new Date(obj.datetime).toLocaleDateString()}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+					
+					if (obj.note !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.note}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+				}
+			} else {
+				console.log("There were no features for the handleNotes table.");
+			}
+		}
+		
+		
+		function handleMultiNotesResults(results)
+		{
+			//for(var i = 0; i < results.features.length; i++)
+			//{
+				/* var obj = results.features[0].attributes;
+				var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': 'noteTable' + obj.typeid}, 'locNotes' + obj.typeid);
+				//var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': 'noteTable' + obj.typeid}, 'locNotes1');
+				var headerArray = ["Date", "Note"];
+				
+				var thead = dojo.create('thead', null, table);
+				var row = dojo.create('tr', {'class':'huntTableHeader'}, thead);
+				for (var j=0; j<headerArray.length; j++) {
+					var thElement = dojo.create('th', {'class': 'tcol'+(j+1), 'id':'huntCol'+j, 'innerHTML':headerArray[j]}, row);
+				} */
+			//}
+
+			for(var i = 0; i < results.features.length; i++)
+			{
+			//$.each(huntTableArray, function (key, value) {
+				var obj = results.features[i].attributes;
+				var row2 = dojo.create('tr', {'class':'huntTableRow'}, 'noteTable' + obj.typeid);
+				if (obj.DateTime !== undefined) {
+					//dojo.create('td', {'class':'tableData', 'innerHTML': obj.DateTime}, row2, 'last');
+					dojo.create('td', {'class':'tableData', 'innerHTML': new Date(obj.DateTime).toLocaleDateString()}, row2, 'last');
+				} else {
+					dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+				}
+				
+				if (obj.Note !== undefined) {
+					dojo.create('td', {'class':'tableData', 'innerHTML': obj.Note}, row2, 'last');
+				} else {
+					dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+				}
+			}
+		}
+		
+		/* function handleNotesErrors(error)
+		{
+			console.log("Notes Error: ", error);
+		} */
+		
+		function LoadLocationData(locID)
+		{
+			//let qtLoc = new QueryTask(msLocation);
+			let qLoc = new Query();
+			qLoc.returnGeometry = false;
+			qLoc.outFields = ["*"];
+			qLoc.objectIds = [locID];
+			//qLoc.where = "objectid = '" + locID + "'";
+
+			query.executeQueryJSON(msLocation,qLoc).then(handleLocResults)
+			//qtLoc.execute(qLoc, handleLocResults);
+		}
+
+		// populates the primary well/spring information on the flyout pane
+		// whats the dif between this and handleLocsResults?
+		function handleLocResults(results)
+		{
+			console.log(results)		
+			if(chart != null)
+			{
+				chart.clear();
+				chart = null;
+			}
+			$("#divSpinner").show();
+			var res = results.features;
+			gl.loc = res;
+			gl.locs = res;
+			res = res[0].attributes;
+
+			$("pnlTitle").empty();
+			$("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
+			$("#location-content").empty();
+			$("#site-location-content").empty();
+			gl.locIDs = res.objectid;
+			console.log(res.imagepath);
+			var path = "./images/"+res.imagepath;
+			// some images aren't there, some have blank spaces, so test
+			if (!res.imagepath || res.imagepath.length < 3 || !imageExists(path) ){
+				console.log("no images!");
+				res.imagepath = "no-image-available-new.jpg";
+			}
+			
+			console.log(res);
+			$("#location-content").append((res.locationid == null ? "" : "<span>ID: " + res.locationid + "</span><br>"))
+				.append((res.locationdesc == null ? "" : "<br><span>Description: " + res.locationdesc + "</span><br>"))
+				.append((res.imagepath == null ? "" : "<a href='./images/" + res.imagepath + "' target='_blank'><img src='./images/" + res.imagepath + "' width='300px' alt='No Image'></img></a>") + "<br>")
+				.append("<br><span>Location Information " + (res.horizontalcoordrefsystem == null ? "" : "(" + res.horizontalcoordrefsystem + ")") + "</span><br>")
+				.append((res.latitude == null ? "" : "<span>Latitude: " + res.latitude + "</span><br>"))
+				.append((res.longitude == null ? "" : "<span>Longitude: " + res.longitude + "</span><br>"))
+				.append((res.county == null ? "" : "<span>County: " + res.county + "</span><br>"));
+			if(res.usgs_id != null && res.usgs_id.length > 0)
+				$("#location-content").append("<br /><span>USGS Well Number: <a href='http://nwis.waterdata.usgs.gov/nwis/gwlevels/?site_no=" + res.usgs_id + "' target='_blank'>" + res.usgs_id + "</a></span><br>");
+			/* else
+				$("#location-content").append("<span>USGS Well Number: NA</span><br>"); */
+				$("#location-content").append((res.wrnum == null ? "" : "<br><span>Water Rights Number: " + res.wrnum + "</span><br>"))
+				.append((res.win == null ? "" : "<br><span>WIN: <a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
+				.append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure + "</span><br>"))
+				.append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
+				.append("<br><span id='si'>Screened Interval</span><br>")
+				.append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
+				.append((res.aquifername == null ? "" : "<br><span>Screened Unit: " +  getLocalAquifer(res.aquifername) + "</span><br>"))
+				/* .append("<span>Barometric Efficiency: " + (res.BaroEfficiency == null ? "" : res.BaroEfficiency) + "</span><br>")
+				.append("<span>Started: " + (res.BaroEfficiencyStart == null ? "" : new Date(res.BaroEfficiencyStart).toLocaleDateString()) + "</span><br><br>") */
+				.append((res.notes == null ? "" : "<br><span>Notes: " + res.notes + "</span>"))
+				.append("<br><span>Note Log<div id='locNotes1' style='overflow:auto;max-height:300px;'></div>");
+				
+			if(res.linklithologiclog != null)
+				$("#location-content").append("<span><a href='" + res.linklithologiclog + "' target='_blank'>Lithologic Log</a></span>");
+			
+			if(res.linkgeophysicallog != null)
+				$("#location-content").append("<br><span><a href='" + res.linkgeophysicallog + "' target='_blank'>Geophysical Log</a></span>");
+			
+			if(res.linkdevelopmentlog != null)
+				$("#location-content").append("<br><span><a href='" + res.linkdevelopmentlog + "' target='_blank'>Development Log</a></span>");
+			
+			
+			//var qtLith = new QueryTask(msLith);
+			var qLith = new Query();
+			
+			var statMin = new StatisticDefinition();
+			statMin.statisticType = "min";
+			statMin.onStatisticField = "lithologydepthfrom";
+			statMin.outStatisticFieldName = "minFrom";
+			
+			var statMax = new StatisticDefinition();
+			statMax.statisticType = "max";
+			statMax.onStatisticField = "lithologydepthto";
+			statMax.outStatisticFieldName = "maxTo";
+			
+			var statUnit = new StatisticDefinition();
+			statUnit.statisticType = "max";
+			statUnit.onStatisticField = "lithologydepthfromunit";
+			statUnit.outStatisticFieldName = "maxUnit";
+			
+			qLith.returnGeometry = false;
+			qLith.outFields = ["objectid"];
+			qLith.where = "siteno = '" + res.locationid + "'";
+			qLith.outStatistics = [ statMin, statMax, statUnit ];
+			
+			//qtLith.execute(qLith, handleLithResults, handleLithErrors);
+			query.executeQueryJSON(msLith,qLith).then(handleLithResults);
+
+			/* function handleLithErrors(error)
+			{
+				console.log("There was an error in the first arcgis server query 'lithresults'. See next line for details.");
+				console.log(error);
+			} */
+			
+			$("#graph-content").hide();
+			$("#graph-content-flow").hide();
+			$("#graph-message").hide();
+			$("#divDownload").show();
+
+			console.log("alt location id = "+ res.altlocationid);
+			if(res.altlocationid == null)
+			{
+				$("#graph-message").show();
+				$("#divSpinner").hide();
+				$("#divDownload").hide();
+				return;
+			}
+			
+			//let qtNotes = new QueryTask(msNotes);
+			let qNotes = new Query();
+			qNotes.outFields = ["*"];
+			qNotes.returnGeometry = false;
+			qNotes.orderByFields = ["datetime DESC"];
+			if(res.altlocationid != null){
+				qNotes.where = "typeid = " + res.altlocationid + " AND type = 'L'";
+			} else {
+				qNotes.where = "1=2";
+			}
+			//qtNotes.execute(qNotes, handleNotesResults, handleNotesErrors);
+			query.executeQueryJSON(msNotes,qNotes).then(handleNotesResults);
+			
+			var dataTable = res.locationtype;
+			
+			if(dataTable.toLowerCase() == "spring")
+			{
+				$(".divFlow").show();
+				flowIDs = res.altlocationid;
+				getFlowData(res.altlocationid + "", "daily", true);
+			}
+			else // if its a well
+			{
+				console.log("starting spring qGraph query task");
+				$(".divFlow").hide();
+				//qtGraph = new QueryTask(msReadings);
+				qGraph = new Query();
+				qGraph.returnGeometry = false;
+				qGraph.where = "locationid = " + res.altlocationid;
+				qGraph.outFields = ["readingdate, waterelevation"];
+				qGraph.orderByFields = ["readingdate"];
+				//qtGraph.execute(qGraph, handleGraphResults, handleGraphError);
+				query.executeQueryJSON(msReadings,qGraph).then(handleGraphResults);
+			}
+		}
+		
+		/* function handleLocError(error)
+		{
+			console.log("LocError: ", error);
+		}
+		 */	
+
+
+		function getFlowData(id, type, hideSpin)
+		{
+			if (!id){
+				console.log("There was no flow well id. This is probalby a well. Aborting getflowdata.php");
+				return;
+			} else {
+				// regex: replace all quotes '' with nothing (ie remove single quotes)
+				console.log("getflowdata(php) variables= "+ id +", "+type);
+				$.post("getFlowData.php", { locID: id.replace(/'/g, ""), type: type }, function(data){
+					//console.log(data);
+					data = JSON.parse(data);
+					if(data.length > 0)
+						graphFlowData(data, hideSpin);
+					else
+						$("#graph-content-flow").hide();
+				})
+				.fail(function() {
+					alert("Failed to fetch data from the db.");
+				})
+				.always(function() {
+					$("#procMessage").text("Populating Graph...");
+					if(hideSpin)
+						$("#divSpinner").hide();
+				})
+			} //end else
+		}
+		
+
+		// lance:  my new attempt to change the chart from amcharts to dygraphs
+		// see https://dygraphs.com/gallery/#g/range-selector
+		// https://dygraphs.com/gallery/range-selector.js
+		function graphFlowDataNew(data, hideSpin)
+		{
+			var arrLocs = [];
+			var graphs = [];
+			console.log("beginning to graphFlowData()");
+			//console.log(data);
+
+			new Dygraph(
+				document.getElementById("noroll"),
+				data_temp,
+				{
+					customBars: true,
+					title: 'Daily Temperatures in New York vs. San Francisco',
+					ylabel: 'Temperature (F)',
+					legend: 'always',
+					showRangeSelector: true
+				}
+      		);
+		}
+
+		function graphFlowData(data, hideSpin)
+		{
+			console.log("starting graphFlowData() - charts for springs?");
+			var arrLocs = [];
+			var graphs = [];
+			//console.log(data);
+			for(var i = 0; i < gl.locs.length; i++)
+			{
+				if(gl.locs[i].attributes.locationtype.toLowerCase() != "spring")
+					continue;
+
+				arrLocs.push(gl.locs[i].attributes.altlocationid);
+				graphs.push({
+						"balloonText":"[[flowdate]] : [[value]]",
+						"bullet":"round",
+						"bulletBorderAlpha": 1,
+						"bulletSize": 5,
+						"lineThickness": 1,
+						"lineColor": "#6FA9D8",
+						"type": "smoothedLine",
+                        "theme": "light",
+						"title": "red line",
+						"useLineColorForBulletBorder": true,
+						"id":"Graph" + i,
+						"title":gl.locs[i].attributes.locationname,
+						"valueField":"discharge" + arrLocs.indexOf(gl.locs[i].attributes.altlocationid),
+						"hideBulletsCount": 50
+				});
+			}
+//console.log(arrLocs);
+
+
+			chartFlow = AmCharts.makeChart("graph-content-flow",
+			{
+				"type":"serial",
+				"marginRight": 40,
+				"marginLeft": 40,
+				"autoMarginOffset": 20,
+				"categoryField":"flowdate",
+				"mouseWheelScrollEnabled": true,
+				"mouseWheelZoomEnabled": true,
+				//"theme":"light",
+				"creditsPosition": "bottom-right",
+				"categoryAxis": {
+					"gridPosition":"start",
+					"minPeriod": "DD"
+				},
+				"graphs": graphs,
+				"chartScrollbar": {
+					"oppositeAxis":false,
+					"offset":25,
+					"scrollbarHeight": 14,
+					"backgroundColor": "#6FA9D8",  // color of resize background
+					"graphFillAlpha": 0,
+					"graphLineAlpha": 0.5,
+					"selectedGraphFillAlpha": 0,
+					"selectedGraphLineAlpha": 1,
+					"autoGridCount":false,
+					"dragIcon": "dragIconRoundSmall",   //dragIconRoundSmall  dragIconRectSmall
+					"dragIconHeight": 17,
+					"color":"#f04d5e"   // color of date hover box background
+				},
+				"chartCursor": {
+					"valueLineEnabled": false,
+					"valueLineBalloonEnabled": false,
+					"cursorAlpha":1,
+					//"cursorColor":"#f04d5e",
+					"valueLineAlpha":1,
+					"valueZoomable":true,
+					"categoryBalloonDateFormat":"MM/DD/YYYY"
+				},
+				"guides":[],
+				"valueAxes":[
+					{
+						"id":"ValueAxis-1",
+						"title":"Discharges (cfs)"
+					}
+				],
+				"allLabels":[],
+				"balloon": [],
+				"legend":{
+					"enabled":true,
+					"useGraphSettings":true,
+					"valueText":""
+				},
+				"export": {
+					"enabled": true
+				}
+			});
+			
+			var chartData = [];
+			var i = 0;
+			var tmpDt = "";
+			var count;
+			var o = {};
+			while(i < data.length)
+			{
+				//console.log( data[i] );	
+				//console.log( arrLocs.indexOf(data[i].locationid) );	
+				o = {};
+				valCol = "discharge" + "0";	//was "discharge" + arrLocs.indexOf(data[i].locationid)
+				o.flowdate = data[i].flowdate;
+				o[valCol] = data[i].discharge;
+				tmpDt = data[i].flowdate;
+				i++;
+				while(i < data.length && tmpDt == data[i].flowdate)
+				{
+					valCol = "discharge" + "0";  //was "discharge" + arrLocs.indexOf(data[i].locationid)
+					o[valCol] = data[i].discharge;
+					tmpDt = data[i].flowdate;
+					i++;
+				}
+				
+				chartData.push(o);
+			}
+		
+			chartFlow.dataProvider = chartData;
+			chartFlow.validateData();
+			chartFlow.animateAgain();
+			
+			if(chartFlow.dataProvider.length > 0)
+			{
+				$("#graph-content-flow").show();
+				$("#graph_options").show();
+				$("#graph-message").hide();
+			}
+			else
+			{
+				$("#graph-message").show();
+			}
+
+			if(chartFlow.dataProvider.length > 100)
+			{
+				chartFlow.addListener("rendered", zoomChart);
+				zoomChart(chartFlow);
+			}
+			
+			if(hideSpin){
+				$("#divSpinner").hide();
+			}
+			console.log("finished graphFlowData()");
+			//console.log(chartData);
+		}
+		
+		function handleGraphResults(results)
+		{
+			console.log("starting handleGraphResults function - water elevation am chart for wells?");
+			console.log(results);
+			var res = gl.loc[0].attributes;
+			chart = AmCharts.makeChart("graph-content",
+			{
+				"type":"serial",
+				"listeners": [{
+					"event": "zoomed",
+					"method": handleZoom
+				}],
+				"marginRight": 40,
+				"marginLeft": 40,
+				"autoMarginOffset": 20,
+				"categoryField":results.fields[0].name,
+				"mouseWheelScrollEnabled": true,
+				"mouseWheelZoomEnabled": true,
+				"theme":"light",
+				"creditsPosition": "bottom-right",
+				"categoryAxis": {
+					"gridPosition":"start",
+					"parseDates": true,
+					"minPeriod": "mm"
+				},
+				"trendLines":[],
+				"graphs": [
+					{
+					"balloonText":"[[" + results.fields[0].name + "]] : [[value]]",
+					"bullet":"round",
+					"bulletBorderAlpha": 1,
+					"bulletColor": "#6C92B7",
+					"bulletSize": 5,
+					"lineThickness": 1,
+					"lineColor": "#6C92B7",
+					"title": "red line",
+					"useLineColorForBulletBorder": true,
+					"id":"Graph1",
+					"title":res.locationname,
+					// might have to match with data value
+					"valueField":results.fields[1].name,
+					"hideBulletsCount": 50
+					}
+				],
+				"chartScrollbar": {
+					"graph":"Graph1",
+					"updateOnReleaseOnly": true,
+					"oppositeAxis":false,
+					"offset":25,
+					"scrollbarHeight": 20,
+					"backgroundColor": "#6C92B7",
+					"selectedBackgroundColor": "6C92B7",
+					"graphFillAlpha": 0,
+					"graphLineAlpha": 0.5,
+					"selectedGraphFillAlpha": 0,
+					"selectedGraphLineAlpha": 1,
+					"autoGridCount":false,
+					"dragIcon": "dragIconRectSmall",
+					"dragIconHeight": 25,
+					"color":"#FFFFFF"
+				},
+				"chartCursor": {
+					"valueLineEnabled": false,
+					"valueLineBalloonEnabled": false,
+					"cursorAlpha":1,
+					"cursorColor":"#333333",
+					"valueLineAlpha":1,
+					"valueZoomable":true,
+					"categoryBalloonDateFormat":"M/DD/YY L:NN A"
+				},
+				"guides":[],
+				"valueAxes":[
+					{
+						"id":"ValueAxis-1",
+						"title":results.fields[1].alias + " (ft)"
+					}
+				],
+				"allLabels":[],
+				"balloon": [],
+				"legend":{
+					"enabled":true,
+					"useGraphSettings":true,
+					"valueText":""
+				},
+				"export": {
+					"enabled": true
+				}
+			});
+			
+			var chartData = [];
+			
+			results = results.features;
+			for(var i = 0; i < results.length; i++)
+			{
+				if(results[i].attributes.flowdate != null)
+				{
+					var dt = new Date(results[i].attributes.flowdate);
+					var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
+					dt = new Date(utc);
+					// note: these need to match exactly with the 'category field' and 'value field' defined above
+					chartData.push({flowdate: dt.toLocaleString(), discharge: results[i].attributes.discharge});
+				}
+				else
+				{
+					var dt = new Date(results[i].attributes.readingdate);
+					var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
+					dt = new Date(utc);
+					// note: these need to match exactly with the 'category field' and 'value field' defined above
+					chartData.push({readingdate: dt.toLocaleString(), waterelevation: results[i].attributes.waterelevation});
+				}
+			}
+			
+			console.log("adding data to chart!");
+			//console.log(chartData);
+			chart.dataProvider = chartData;
+			chart.validateData();
+			chart.animateAgain();
+			
+			chart.addListener("rendered", zoomChart);
+
+			if(chart.dataProvider.length > 100)
+				zoomChart(chart);
+			
+			$("#divSpinner").hide();
+			
+			if(results.length > 0)
+			{
+				$("#graph-content").show();
+				$("#graph-message").hide();
+			}
+			else
+			{
+				$("#graph-content").hide();
+				$("#graph-message").show();
+			}
+
+			res.locationtype.toLowerCase() == "spring" ? $("#graph_options").show() : $("graph_options").hide();
+		}
+		
+		function zoomChart(chrt) {
+			if(chrt.dataProvider != null)
+				chrt.zoomToIndexes(Math.floor(chrt.dataProvider.length / 2), chrt.dataProvider.length - 1);
+		}
+		
+		/* function handleGraphError(err)
+		{
+			console.log(err);
+		} */
+		
+		$(".flow").change(function() {
+			$("#divSpinner").show();
+			getFlowData(flowIDs, $(this).val(), true);
+		});
+		
+		function LoadSiteAreaData(siteID)
+		{
+			$("#divSpinner").show();
+			//let qtSite = new QueryTask(msSite);
+			let qSite = new Query();
+			qSite.returnGeometry = false;
+			qSite.outFields = ["*"];
+			qSite.where = "siteid = '" + siteID + "'";
+			
+			//let qtNotes = new QueryTask(msNotes);
+			let qNotes = new Query();
+			qNotes.returnGeometry = false;
+			qNotes.orderByFields = ["datetime DESC"];
+			qNotes.outFields = ["*"];
+			
+			qNotes.where = "typeid = '" + siteID + "' AND type = 'S'";
+			
+			//promises = new all([qtSite.execute(qSite, null, handleSiteError), qtNotes.execute(qNotes, null, handleSiteError)]);
+			//promises.then(handleSiteResults);
+			query.executeQueryJSON(msSite,qSite).then(handleSiteResults);
+			query.executeQueryJSON(msNotes,qNotes).then(handleSiteResults);
+			
+		}
+		
+		function handleSiteResults(results)
+		{
+			var res = results[0].features;
+			gl.site = res;
+			res = res[0].attributes;
+			$("#pnlTitle").empty();
+			if(res.linkadditionalinfo != null && res.linkadditionalinfo.length > 0)
+				$("#pnlTitle").append("Site: <a href='http://" + res.linkadditionalinfo + "' target='_blank' class='aLight'>" + res.name + "</a>");
+			else
+				$("#pnlTitle").text("Site: " + res.name);
+			$("#location-content").empty();
+			$("#site-location-content").empty();
+			if(res.imagepath != null && res.imagepath.length > 0)
+			{
+				$("#location-content").append("<a href='./" + res.imagepath + "' target='_blank'><img src='./" + res.imagepath + "' width='300px' alt='No Image'></img></a><br><br>");
+			}
+			else
+			{
+				$("#location-content").append("<span>No Image</span></br></br>");
+			}
+			$("#location-content").append("<span>Description</span><br>")
+				.append("<span>" + res.sitedescription + "</span><br><br>");
+			$("#location-content").append("<span>Location</span><br>")
+				.append("<span>Latitude: " + res.latitude + "</span><br>")
+				.append("<span>Longitude: " + res.longitude + "</span><br>")
+				.append("<span>Note Log<div id='siteNotes' style='overflow:auto;max-height:300px;'></div>");
+			//$('.cd-panel').addClass('is-visible');
+			resultsExpand.expand();
+			
+			// output a table of the array
+			dojo.empty(siteNotes);
+			//$(tableDiv).append("<div class='buttonElementShort' id='btnSelAll' style='float:left;width:initial;padding-right:8px;margin-top:2px;'><span class='buttonSpan'>Copy</span></div>");
+			var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': 'sNoteTable'}, siteNotes);
+			
+			var headerArray = ["Date", "Note"];
+			
+			var thead = dojo.create('thead', null, table);
+			var row = dojo.create('tr', {'class':'huntTableHeader'}, thead);
+			for (var i=0; i<headerArray.length; i++) {
+				var thElement = dojo.create('th', {'class': 'tcol'+(i+1), 'id':'huntCol'+i, 'innerHTML':headerArray[i]}, row);
+			}
+			var tbody = dojo.create('tbody', null, table);
+
+			for(var i = 0; i < results[1].features.length; i++)
+			{
+			//$.each(huntTableArray, function (key, value) {
+				var obj = results[1].features[i].attributes;
+				var row2 = dojo.create('tr', {'class':'huntTableRow'}, tbody);
+				if (obj.DateTime !== undefined) {
+					dojo.create('td', {'class':'tableData', 'innerHTML': new Date(obj.DateTime).toLocaleDateString()}, row2, 'last');
+				} else {
+					dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+				}
+				
+				if (obj.Note !== undefined) {
+					dojo.create('td', {'class':'tableData', 'innerHTML': obj.Note}, row2, 'last');
+				} else {
+					dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+				}
+			}
+			
+			var siteID = res.siteid;
+			loadSiteLocations(siteID);
+		}
+		
+		/* function handleSiteError(error)
+		{
+			console.log(error);
+		} */
+		
+		function loadSiteLocations(site)
+		{
+			//let qtLocs = new QueryTask(msLocation);
+			let qLocs = new Query();
+			qLocs.returnGeometry = false;
+			qLocs.outFields = ["*"];
+			qLocs.where = "siteid = '" + site + "'";
+			
+			//qtLocs.execute(qLocs, handleLocsResults, handleLocsError);
+			query.executeQueryJSON(msLocation,qLocs).then(handleLocsResults);
+		}
+
+		function imageExists(image_url){
+			console.log("checking if image exists. next line will give HEAD error in console if no image is there.");
+			var http = new XMLHttpRequest();
+			http.open('HEAD', image_url, false);
+			http.send();
+			return http.status != 404;
+		}
+
+		// populates the primary well/spring information on the flyout pane
+		// whats the dif between this and handleLocResults?
+		function handleLocsResults(results)
+		{
+			$("#divSpinner").show();
+			$("#graph-content").hide();
+			$("#graph-content-flow").hide();
+			$("#graph-message").hide();
+			var allRes = results.features;
+			var locIDs = "";
+			var flowLocIDs = "";
+			var locOIDs = "";
+			gl.locs = allRes;
+			$("#site-location-content").empty();
+			$("#site-location-content").append("<br><span>Site Locations (click to view)</span>");
+			for(var i = 0; i < allRes.length; i++)
+			{
+				res = allRes[i].attributes;
+				console.log(res);
+				if(res.altlocationid != null)
+				{
+					if(res.locationtype != null && res.locationtype.toLowerCase() == "spring")
+						flowLocIDs += "'" + res.altlocationid + "',";
+					else
+						locIDs += "'" + res.altlocationid + "',";
+				}
+				// check to see if image exists, if not assign noimage.jpg
+				var path = "./images/"+res.imagepath;
+				if ( !imageExists(path) ){
+					res.imagepath = "no-image-available.jpg";
+				}
+				locOIDs += res.objectid + ",";
+				//$("#pnlTitle").text("Location: " + res.locationname);
+				$("#site-location-content").append($((res.locationname == null ? "No Name" : "<div class='locDiv'><span class='locSpan siteLocation'>" + res.locationname + "</span>"))
+					.append($("<div style='display:none;'>")
+						.append((res.locationid == null ? "" : "<span>ID: " + res.locationid + "</span><br>"))
+						.append((res.locationdesc == null ? "" : "<br><span>Description: " + res.locationdesc + "</span><br>"))
+						.append((res.imagepath == null || res.imagepath.length <= 0 ? "" : "<a href='./images/" + res.imagepath + "' target='_blank'><img src='./images/" + res.imagepath + "' width='300px' alt='No Image'></img></a>") + "<br>")
+						.append("<br><span>Location Information " + (res.horizontalcoordrefsystem == null ? "" : "(" + res.horizontalcoordrefsystem + ")") + "</span><br>")
+						.append((res.latitude == null ? "" : "<span>Latitude: " + res.latitude + "</span><br>"))
+						.append((res.longitude == null ? "" : "<span>Longitude: " + res.longitude + "</span><br>"))
+						.append((res.county == null ? "" : "<span>County: " + res.county + "</span><br>"))
+						.append((res.usgs_id == null || res.usgs_id.length <= 0 ? "" : "<br><span>USGS Well Number: " + "<a href='http://nwis.waterdata.usgs.gov/nwis/gwlevels/?site_no=" + res.usgs_id + "' target='_blank'>" + res.usgs_id + "</a>" + "</span><br><br>"))
+						.append((res.wrnm == null ? "" : "<span>Water Rights Number: " + res.wrnum + "</span><br>"))
+						.append((res.win == null ? "" : "<br><span>WIN: " + "<a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
+						.append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure + "</span><br>"))
+						.append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.selldepthmeasureunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
+						.append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
+						.append((res.aquifername == null ? "" : "<br><span>Screened Unit: " + getLocalAquifer(res.AquiferName) + "</span><br>"))
+						/* .append("<span>Barometric Efficiency: " + (res.BaroEfficiency == null ? "" : res.BaroEfficiency) + "</span><br>")
+						.append("<span>Started: " + (res.BaroEfficiencyStart == null ? "" : new Date(res.BaroEfficiencyStart).toLocaleDateString()) + "</span><br><br>") */
+						.append((res.notes == null ? "" : "<br><span>Notes: " + res.notes + "</span>"))
+						.append("<br><span>Note Log<div id='locNotes" + res.altlocationid + "' style='max-height:200px;overflow:auto;'><table class='resultsTable tablesorter' id='noteTable" + res.altlocationid + "'><tr class='huntTableHeader'><th class='tcol1' style='border:1px solid black;'>Date</th><th class='tcol2' style='border:1px solid black;'>Note</th></tr></table></div>")
+						.append("<br><hr>")
+						
+						.append((res.linklithologiclog != null && res.linklithologiclog.length > 0 ? "<br><br><span><a href='" + res.linklithologiclog + "' target='_blank'>Lithologic Log</a></span>" : ""))
+						
+						.append((res.linkgeophysicallog != null && res.linkgeophysicallog.length > 0 ? "<br><span><a href='" + res.linkgeophysicallog + "' target='_blank'>Geophysical Log</a></span>" : ""))
+						
+						.append((res.linkdevelopmentlog != null && res.linkdevelopmentlog.length > 0 ? "<br><span><a href='" + res.linkdevelopmentlog + "' target='_blank'>Development Log</a></span>" : ""))
+					)
+				)
+			}
+			
+			locIDs = locIDs.slice(0, -1);
+			flowLocIDs = flowLocIDs.slice(0, -1);
+			locOIDs = locOIDs.slice(0, -1);
+			
+			$(".locSpan").click(function() {
+				$(this).parent().children("div").toggle('slow');
+			});
+			
+			if(locIDs.length <= 0 && flowLocIDs.length <= 0)
+			{
+				$("#site-location-content").append("<br><span>No location data for this site</span>");
+				$("#divSpinner").hide();
+				$("#graph-message").show();
+				return;
+			}
+			
+			if(locIDs.length > 0 && flowLocIDs.length > 0)
+				locIDs += "," + flowLocIDs;
+			else if(locIDs.length <= 0 && flowLocIDs.length > 0)
+				locIDs = flowLocIDs;
+			
+			gl.locIDs = locOIDs;
+			//let qtLith = new QueryTask(msLith);
+			let qLith = new Query();
+			
+			var statMin = new StatisticDefinition();
+			statMin.statisticType = "min";
+			statMin.onStatisticField = "lithologydepthfrom";
+			statMin.outStatisticFieldName = "minFrom";
+			
+			var statMax = new StatisticDefinition();
+			statMax.statisticType = "max";
+			statMax.onStatisticField = "lithologydepthto";
+			statMax.outStatisticFieldName = "maxTo";
+			
+			var statUnit = new StatisticDefinition();
+			statUnit.statisticType = "max";
+			statUnit.onStatisticField = "lithologydepthfromunit";
+			statUnit.outStatisticFieldName = "maxUnit";
+			
+			qLith.returnGeometry = false;
+			qLith.outFields = ["*"];
+			if(locIDs.length > 0){
+				console.log("1. add quotes!? "+locIDs);
+				qLith.where = "siteno IN (" + locIDs + ")";
+			} else
+				qLith.where = "1=2";
+			qLith.outStatistics = [ statMin, statMax, statUnit ];
+			qLith.groupByFieldsForStatistics = ["siteno"];
+
+			console.log(qLith);			
+			//qtLith.execute(qLith, handleLithResults, handleLithErrors2);
+			query.executeQueryJSON(msLith,qLith).then(handleLithResults);
+
+			/* function handleLithErrors2(error)
+			{
+				console.log("There was an error in the second arcgis server 'handleLith' query. See next line for details.");
+				console.log(error);
+			} */
+
+			let qtGraph = new QueryTask(msReadings);
+			let qGraph = new Query();
+			qGraph.returnGeometry = false;
+			qGraph.outFields = ["readingdate, waterelevation, locationid"];
+			qGraph.orderByFields = ["readingdate", "locationid"];
+			console.log("starting qtGraph query task");
+			if(locIDs.length > 0){
+				console.log("2. add quotes!? "+locIDs);
+				qGraph.where = "locationid IN (" + locIDs.replace(/'/g, "") + ")";		//regex: remove quotes from locid's
+			} else
+				qGraph.where = "1=2";
+
+			//let qtNotes = new QueryTask(msNotes);
+			let qNotes = new Query();
+			qNotes.returnGeometry = false;
+			qNotes.outFields = ["*"];
+			qNotes.orderByFields = ["datetime DESC"];
+			if(locIDs.length > 0){
+			console.log("3. add quotes!? "+locIDs);
+				qNotes.where = "typeid IN (" + locIDs + ") AND type = 'L'";		////regex: remove quotes from locid's
+			} else
+				qNotes.where = "1=2";
+			
+			flowIDs = flowLocIDs;
+			//getFlowData(flowLocIDs, "daily");
+			$("#divSpinner").show();
+			console.log("flow location ids = "+flowLocIDs);
+			//promises = new all([qtGraph.execute(qGraph, handleMultiGraphResults, handleMultiGraphError), getFlowData(flowLocIDs, "daily", false),
+			promises = new all([query.executeQueryJSON(msReadings,qGraph).then(handleMultiGraphResults), getFlowData(flowLocIDs, "daily", false)]);
+			promises.then(graphingDone);
+			//qtNotes.execute(qNotes, handleMultiNotesResults, handleNotesErrors)]);
+			query.executeQueryJSON(msNotes,qNotes).then(handleMultiNotesResults);
+			//$('.cd-panel').addClass('is-visible');
+			resultsExpand.expand();
+		}
+		
+		/* function handleLocsError(error)
+		{
+			console.log(error);
+		} */
+		
+		function graphingDone()
+		{
+			$("#divSpinner").hide();
+		}
+		
+		// is this even used???
+		/*
+		function handleMultiGraphResults(results)
+		{
+			var arrLocs = [];
+			var graphs = [];
+			for(var i = 0; i < gl.locs.length; i++)
+			{
+				if(gl.locs[i].attributes.locationtype != null && gl.locs[i].attributes.locationtype.toLowerCase() == "spring")
+					continue;
+				
+				arrLocs.push(gl.locs[i].attributes.altlocationid);
+				graphs.push({
+					"balloonText":"[[" + results.fields[0].name + "]] : [[value]]",
+					"bullet":"round",
+					"bulletBorderAlpha": 1,
+					"bulletSize": 5,
+					"lineThickness": 1,
+					"title": "red line",
+					"useLineColorForBulletBorder": true,
+					"id":"Graph" + i,
+					"title":gl.locs[i].attributes.locationname,
+					"valueField":results.fields[1].name + i,
+					"hideBulletsCount": 50
+				});
+			}
+			
+			chart = AmCharts.makeChart("graph-content",
+			{
+				"type":"serial",
+				"listeners": [{
+					"event": "zoomed",
+					"method": handleZoom
+				}],
+				"marginRight": 40,
+				"marginLeft": 40,
+				"autoMarginOffset": 20,
+				"categoryField":results.fields[0].name,
+				"mouseWheelScrollEnabled": true,
+				"mouseWheelZoomEnabled": true,
+				"creditsPosition": "bottom-right",
+				"theme":"light",
+				"categoryAxis": {
+					"gridPosition":"start",
+					"parseDates": true,
+					"minPeriod": "mm"
+				},
+				"trendLines":[],
+				"graphs": graphs,
+				"chartScrollbar": {
+					"oppositeAxis":false,
+					"updateOnReleaseOnly": true,
+					"offset":25,
+					"scrollbarHeight": 20,
+					"backgroundColor": "#6C92B7",
+					"selectedBackgroundColor": "#EFEFEF",
+					"graphFillAlpha": 0,
+					"graphLineAlpha": 0.5,
+					"selectedGraphFillAlpha": 0,
+					"selectedGraphLineAlpha": 1,
+					"autoGridCount":false,
+					"dragIcon": "dragIconRectSmall",
+					"dragIconHeight": 25,
+					"color":"#FFFFFF"
+				},
+				"chartCursor": {
+					"enabled":true,
+					"cursorColor":"#6C92B7",
+					"categoryBalloonDateFormat":"M/DD/YY L:NN A"
+				},
+				"guides":[],
+				"valueAxes":[
+					{
+						"id":"ValueAxis-1",
+						"title":results.fields[1].alias + " (ft)"
+					}
+				],
+				"allLabels":[],
+				"balloon": [],
+				"legend":{
+					"enabled":true,
+					"useGraphSettings":true,
+					"valueText":""
+				},
+				"export": {
+					"enabled": true
+				}
+			});
+			
+			var chartData = [];
+			var i = 0;
+			var tmpDt = "";
+			var count;
+			var o = {};
+			results = results.features;
+			//console.log(results);
+			while(i < results.length)
+			{
+				o = {};
+				var dt = new Date(results[i].attributes.readingdate);
+				var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
+				dt = new Date(utc);
+				valCol = "waterelevation" + arrLocs.indexOf(results[i].attributes.locationid);
+				o.readingdate = dt.toLocaleString();
+				o[valCol] = results[i].attributes.waterelevation;
+				
+				tmpDt = results[i].attributes.readingdate;
+				i++;
+				while(i < results.length && tmpDt == results[i].attributes.readingdate)
+				{
+					valCol = "waterelevation" + arrLocs.indexOf(results[i].attributes.locationid);
+					o[valCol] = results[i].attributes.waterelevation;
+					tmpDt = results[i].attributes.readingdate;
+					i++;
+				}
+				
+				chartData.push(o);
+			}
+			
+			chart.dataProvider = chartData;
+			chart.validateData();
+			chart.animateAgain();
+			
+			if(chart.dataProvider.length > 0)
+			{
+				$("#graph-content").show();
+				$("#graph-message").hide();
+			}
+			else
+			{
+				$("#graph-message").show();
+			}
+
+			if(chart.dataProvider.length > 100)
+			{
+				chart.addListener("rendered", zoomChart);
+				zoomChart(chart);
+			}
+		}
+		*/
+		
+		/* function handleMultiGraphError(err)
+		{
+			console.log("MultiGraphError: ", err);
+		} */
+		
+		function handleZoom(e)
+		{
+			console.log("handleZoom function firing");
+			var dtStart = new Date(e.startDate);
+			var dtEnd = new Date(e.endDate);
+			$("#fromDate").val(dtStart.toLocaleDateString());
+			$("#toDate").val(dtEnd.toLocaleDateString());
+		}
+		
+		$(document).on("input", "#siteName", function() {
+			console.log("line 1719");
+			$("#locationName").val("");
+			$('#projectSelect').val('').prop('selected', true);
+			$("#projectSelect").trigger('change.select2');
+			$('#locationTypeSelect').val('').prop('selected', true);
+			$("#locationTypeSelect").trigger('change.select2');
+		});
+		
+		$(document).on("input", "#locationName", function() {
+			console.log("line 1727");
+			$("#siteName").val("");
+			$('#projectSelect').val('').prop('selected', true);
+			$("#projectSelect").trigger('change.select2');
+			$('#locationTypeSelect').val('').prop('selected', true);
+			$("#locationTypeSelect").trigger('change.select2');
+		});
+		
+		function doSearch()
+		{
+			locIDs = "";
+			siteIDs = "";
+			var project = $("#projectSelect").val();
+			var site = $("#siteName").val();
+			var loc = $("#locationName").val();
+			var locType = $("#locationTypeSelect").val();
+			console.log("searching")
+			if(site.length > 0)
+			{
+				//var qtSites = new QueryTask(msSite);
+				var qSites = new Query();
+				qSites.returnGeometry = false;
+				qSites.outFields = ["*"];
+				qSites.where = "LOWER(NAME) LIKE LOWER('%" + site + "%')";
+				
+				//qtSites.execute(qSites, handleqSiteResults);
+				query.executeQueryJSON(msSite, qSites).then(handleqSiteResults);
+			}
+			else if(loc.length > 0)
+			{
+				//let qtLocs = new QueryTask(msLocation);
+				let qLocs = new Query();
+				qLocs.returnGeometry = false;
+				qLocs.outFields = ["*"];
+				qLocs.where = "locationid LIKE '%" + loc + "%' OR LOWER(locationname) LIKE '%" + loc + "%'";
+				
+				//qtLocs.execute(qLocs, handleqLocsResults, handleqLocsError);
+				query.executeQueryJSON(msLocation, qLocs).then(handleqLocsResults);
+			}
+			else if(project != null && project.length > 0)
+			{
+				//let qtP2SW = new QueryTask(msP2SW);
+				let qP2SW = new Query();
+				qP2SW.returnGeometry = false;
+				qP2SW.outFields = ["*"];
+				qP2SW.where = "projectid = " + project;
+				
+				//qtP2SW.execute(qP2SW, handleP2SWResults, handleP2SWError);
+				query.executeQueryJSON(msP2SW, qP2SW).then(handleP2SWResults);
+			}
+			else if(locType != null && locType.length > 0)
+			{
+				//let qtLocs = new QueryTask(msLocation);
+				let qLocs = new Query();
+				qLocs.returnGeometry = false;
+				qLocs.outFields = ["*"];
+				qLocs.where = "locationdatatable = '" + locType + "'";
+				
+				//qtLocs.execute(qLocs, handleqLocsResults, handleqLocsError);
+				query.executeQueryJSON(msLocation, qLocs).then(handleqLocsResults);
+			}
+			else
+			{
+				var slyr = map.findLayerById('sites');
+				var llyr = map.findLayerById('well-locations');
+				llyr.definitionExpression = "1=1";
+				slyr.definitionExpression = "1=1";
+				getAllSitesAndLocs();
+			}
+		}
+		
+		function handleP2SWResults(results)
+		{
+			var res = results.features;
+			for(var i = 0; i < res.length; i++)
+			{
+				var attr = res[i].attributes;
+				if(attr.ItemType == "L")
+					locIDs += attr.ItemID + ", ";
+				else
+					siteIDs += attr.ItemID + ", ";
+			}
+			locIDs = locIDs.slice(0, -2);
+			siteIDs = siteIDs.slice(0, -2);
+			
+			if(locIDs.length <= 0 && siteIDs.length <= 0)
+			{
+				alert("No search results returned.");
+				return;
+			}
+
+			var slyr = map.findLayerById('sites');
+			var llyr = map.findLayerById('well-locations');
+			if(locIDs.length > 0)
+				llyr.definitionExpression = "objectid IN (" + locIDs + ")";
+			else
+				llyr.definitionExpression = "1=2";
+			if(siteIDs.length > 0)
+				slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
+			else
+				slyr.definitionExpression = "1=2";
+			
+			getSitesAndLocs(siteIDs, locIDs);
+		}
+		
+		/* function handleP2SWError(error)
+		{
+			console.log(error);
+		} */
+		
+		function getSitesAndLocs(siteIDs, locIDs)
+		{
+			//let qtSites = new QueryTask(msSite);
+			let qSites = new Query();
+			qSites.returnGeometry = false;
+			qSites.outFields = ["*"];
+			qSites.where = (siteIDs.length > 0 ? "objectid IN (" + siteIDs + ")" : "1=2");
+	
+			//let qtLocs = new QueryTask(msLocation);
+			let qLocs = new Query();
+			qLocs.returnGeometry = false;
+			qLocs.outFields = ["*"];
+			qLocs.where = (locIDs.length > 0 ? "objectid IN (" + locIDs + ")" : "1=2");
+			
+			//promises = new all([qtSites.execute(qSites, null, handleqSiteError), qtLocs.execute(qLocs, null, handleqLocsError)]);
+			//promises.then(handleSiteLocSearch);
+			query.executeQueryJSON(msSite, qSites).then(handleSiteLocSearch);
+			query.executeQueryJSON(msLocation, qLocs).then(handleSiteLocSearch);
+		}
+		
+		function handleSiteLocSearch(results)
+		{
+			var sites = results[0].features;
+			var locs = results[1].features;
+			loadComplaintTable(sites, "site", true);
+			loadComplaintTable(locs, "loc", false);
+			
+			$("#mapToggle").addClass("showTable");
+			mapToggle();
+		}
+		
+		function getAllSitesAndLocs()
+		{
+			//let qtSites = new QueryTask(msSite);
+			let qSites = new Query();
+			qSites.returnGeometry = false;
+			qSites.outFields = ["*"];
+			qSites.where = "1=1";
+	
+			//let qtLocs = new QueryTask(msLocation);
+			let qLocs = new Query();
+			qLocs.returnGeometry = false;
+			qLocs.outFields = ["*"];
+			qLocs.where = "1=1";
+			
+			//promises = new all([qtSites.execute(qSites, null, handleqSiteError), qtLocs.execute(qLocs, null, handleqLocsError)]);
+			//promises.then(handleSiteLocSearch);
+			query.executeQueryJSON(msSite, qSites).then(handleSiteLocSearch);
+			query.executeQueryJSON(msLocation, qLocs).then(handleSiteLocSearch);
+		}
+
+
+		function handleqSiteResults(results)
+		{
+			console.log("you go");
+			console.log(results);
+			var res = results.features;
+			for(var i = 0; i < res.length; i++)
+			{
+				var attr = res[i].attributes;
+				siteIDs += attr.objectid + ", ";
+				gl.siteIDs = siteIDs;
+			}
+			siteIDs = siteIDs.slice(0, -2);
+			
+			var slyr = map.findLayerById('sites');
+			var llyr = map.findLayerById('well-locations');
+			if(siteIDs.length > 0)
+			{
+				console.log(llyr);
+				slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
+				llyr.definitionExpression = "1=2";
+				loadComplaintTable(res, "site", true);
+				$("#mapToggle").addClass("showTable");
+				mapToggle();
+			}
+			else
+				console.log("no site areas matching query");
+				slyr.definitionExpression = "1=2";
+		}
+		
+		/* function handleqSiteError(error)
+		{
+			console.log("There was an error: msg given was, "+ error);
+		} */
+		
+		function handleqLocsResults(results)
+		{
+			var res = results.features;
+			for(var i = 0; i < res.length; i++)
+			{
+				var attr = res[i].attributes;
+				locIDs += attr.objectid + ", ";
+			}
+			locIDs = locIDs.slice(0, -2);
+			
+			var slyr = map.findLayerById('sites');
+			var llyr = map.findLayerById('well-locations');
+			console.log();
+			if(locIDs.length > 0)
+			{
+				llyr.definitionExpression = "objectid IN (" + locIDs + ")";
+				slyr.definitionExpression = "1=2";
+				loadComplaintTable(res, "loc", true);
+				$("#mapToggle").addClass("showTable");
+				mapToggle();
+			}
+			else
+				llyr.definitionExpression = "1=2";
+		}
+		
+		/* function handleqLocsError(error)
+		{
+			console.log(error);
+		} */
+		
+		//Create the table view of hunts.
+		function loadComplaintTable(data, type, clear) {
+			// output a table of the array
+			if(clear)
+				dojo.empty(resultsDiv);
+			//$(tableDiv).append("<div class='buttonElementShort' id='btnSelAll' style='float:left;width:initial;padding-right:8px;margin-top:2px;'><span class='buttonSpan'>Copy</span></div>");
+			var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': type + 'Table'}, resultsDiv);
+			
+			var headerArray = null;
+			siteIDs = "";
+			locIDs = "";
+			if(type == "site")
+			{
+				var headerArray = ["", "", "Site Name", "# of wells", "Description"];
+			}
+			else if(type == "loc")
+			{
+				var headerArray = ["", "", "Location ID", "Location Name", "Type", "Description"];
+			}
+			
+			var thead = dojo.create('thead', null, table);
+			var row = dojo.create('tr', {'class':'huntTableHeader'}, thead);
+			for (var i=0; i<headerArray.length; i++) {
+				var thElement = dojo.create('th', {'class': 'tcol'+(i+1), 'id':'huntCol'+i, 'innerHTML':headerArray[i]}, row);
+			}
+			var tbody = dojo.create('tbody', null, table);
+			
+			if(type == "site")
+			{
+				for(var i = 0; i < data.length; i++)
+				{
+				//$.each(huntTableArray, function (key, value) {
+					var obj = data[i].attributes;
+					var row2 = dojo.create('tr', {'class':'huntTableRow'}, tbody);
+					if (obj.objectid !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.siteid}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "19"}, row2, 'last');
+					}
+
+					dojo.create('td', {'class':'tableData', 'innerHTML': 's'}, row2, 'last');
+					
+					if (obj.name !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.name}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+					
+					if (obj.totalwellnumber !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.totalwellnumber}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+					
+					if (obj.sitedescription !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.sitedescription}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+					
+					siteIDs += obj.objectid + ", ";
+				}
+				
+				siteIDs = siteIDs.slice(0, -2);
+				gl.siteIDs = siteIDs;
+			}
+			else if(type == "loc")
+			{
+				for(var i = 0; i < data.length; i++)
+				{
+				//$.each(huntTableArray, function (key, value) {
+					var obj = data[i].attributes;
+					var row2 = dojo.create('tr', {'class':'huntTableRow'}, tbody);
+					if (obj.objectid !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.objectid}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "19"}, row2, 'last');
+					}
+
+					dojo.create('td', {'class':'tableData', 'innerHTML': 'l'}, row2, 'last');
+					
+					if (obj.locationid !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.locationid}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+					
+					if (obj.locationname !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.locationname}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+					
+					if (obj.locationtype !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.locationtype}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+					
+					if (obj.LocationDesc !== undefined) {
+						dojo.create('td', {'class':'tableData', 'innerHTML': obj.locationdesc}, row2, 'last');
+					} else {
+						dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+					}
+					
+					locIDs += obj.objectid + ", ";
+				}
+				locIDs = locIDs.slice(0, -2);
+				gl.locIDs = locIDs;
+			}
+			
+			$('.resultsTable tr > *:nth-child(1)').hide();
+			$('.resultsTable tr > *:nth-child(2)').hide();
+			$("#" + type + "Table").tablesorter();
+			// when user clicks on tableRow show its data in the results pane
+			$('.huntTableRow:not(.bound)').addClass('bound').on("click", compPicked);
+			//$('.closeTable:not(.bound)').addClass('bound').on("click", toggleTableClose);
+			//$('#btnSelAll:not(.bound)').addClass('bound').on("click", selectElementContents);
+		}
+		
+		function compPicked(evt)
+		{
+			var id = evt.target.parentElement.cells[0].textContent;
+			var action = evt.target.parentElement.cells[1].textContent;
+			resultsExpand.expand();  // open results pane
+			
+			if(action == "l")
+				LoadLocationData(id);
+			else if(action == "s")
+				LoadSiteAreaData(id);
+		}
+		
+		function toggleTableClose(evt) {
+			tableExpand.collapse();
+		}
+		
+		function doClear()
+		{
+			$("#projectSelect").val("").prop('selected', true);
+			$('#projectSelect').trigger('change.select2'); // Notify only Select2 of changes
+			$("#locationTypeSelect").val("").prop('selected', true);
+			$('#locationTypeSelect').trigger('change.select2'); // Notify only Select2 of changes
+			$("#siteName").val("");
+			$("#locationName").val("");
+			
+			var slyr = map.findLayerById('sites');
+			var llyr = map.findLayerById('well-locations');
+			llyr.definitionExpression = "1=1";
+			slyr.definitionExpression = "1=1";
+			
+			dojo.empty(resultsDiv);
+			//$("#mapToggle").removeClass("showTable");  // turn off the highligt on the toggle button
+		}
+		
+		function mapToggle(evt) {
+			if ($("#resultsDiv").html() != "") {
+				tableExpand.expand();
+			} else {
+				//$("#tableDivTitle").hide();
+				tableExpand.collapse();
+			}
+		}
+		
+
+		function getChecked()
+		{
+			var checked = "";
+			if($("#Cores").prop("checked")) checked += "'CO',";
+			if($("#Cuttings").prop("checked")) checked += "'CU',";
+			if($("#Both").prop("checked")) checked += "'B',";
+			if($("#Other").prop("checked")) checked += "'O',";
+			
+			if(checked.length == 0)
+				return "''";
+			else
+				return checked.slice(0, checked.length - 1);
+		}
+		
+
+		
+/* 		// close the results panel on click
+		$('.cd-panel').on('click', function(event){
+			if( $(event.target).is('.cd-panel') || $(event.target).is('.cd-panel-close') ) { 
+				//$('.cd-panel').removeClass('is-visible');
+				event.preventDefault();
+			}
+		}); */
+
+
+
+
+});    // end dojo.require
+
+
+
+
+
+
+  </script>
+  </head>
+
+  <body>
+
+
+	<!--
+      <calcite-block collapsible="false" heading="Utah Groundwater Monitoring Portal" summary="from the Utah Geological Survey">
+        <calcite-icon scale="s" slot="icon" icon="add-in"></calcite-icon>
+      </calcite-block>
+	-->
+
+      <div id="viewDiv">
+
+
+
+		<calcite-accordion id="searchwin" heading="Search" scale="l" selection-mode="single" style="width:340px;">
+			<calcite-accordion-item icon="search" item-title="Simple Search" item-subtitle="Search for single results" active>
+			
+				<!-- <calcite-label><br> by Location ID or Name.</calcite-label> -->
+				<br>
+				<div id="locationSearch" class="searchbox" style="border:1px solid grey;width:100%;"></div>
+			
+			</calcite-accordion-item>
+			<calcite-accordion-item icon="table" item-title="Advanced Search" item-subtitle="Search for multiple resulsts">
+
+				<br>
+				<calcite-label>Spring or Well Location ID or Name<calcite-input id="locationName" value="PW07" onkeypress=""></calcite-input></calcite-label>
+
+                <calcite-label>Site Area Name<calcite-input type="text" id="siteName" value=""></calcite-input></calcite-label>
+
+				<!--
+                <calcite-label class="sc-calcite-label-h sc-calcite-label-s" alignment="start" status="idle" scale="m" layout="default" id="projectSelectnew">
+					<label class="sc-calcite-label sc-calcite-label-s">Select Project
+						<calcite-select data-name="alignment" data-group="props0" data-component="calcite-input" scale="m" width="auto" calcite-hydrated="">
+						<calcite-option value="1">Snake Valley</calcite-option>
+						<calcite-option value="2"selected >Wasatch Front</calcite-option>
+						<calcite-option value="3">Courthouse Wash</calcite-option>
+						<calcite-option value="4">NGWMN</calcite-option>
+						<calcite-option value="5">Snake Valley Piezometers</calcite-option>
+						<calcite-option value="6">Juab Valley</calcite-option>
+						</calcite-select>
+					</label>
+				</calcite-label>
+
+				<calcite-label class="sc-calcite-label-h sc-calcite-label-s" alignment="start" status="idle" scale="m" layout="default" id="projectSelectnew">
+					<label class="sc-calcite-label sc-calcite-label-s">Select Location Type
+						<calcite-select data-name="alignment" data-group="props0" data-component="calcite-input" scale="m" width="auto" calcite-hydrated="">
+						<calcite-option value="flow">Spring</calcite-option>
+						<calcite-option value="reading"selected >Well</calcite-option>
+						<calcite-option value="piez">Peizometer</calcite-option>
+						</calcite-select>
+					</label>
+				</calcite-label>
+				-->
+
+				<calcite-label>Select Project<div id="projectSelectAlt" class="filterElement"></div></calcite-label>				
+				<calcite-label>Select Location Type<div id="locationTypeSelectAlt" class="filterElement"></div></calcite-label>
+				
+				<br>
+
+                <calcite-button id="btnSearch" style="float:left">Search</calcite-button>&nbsp;
+				<calcite-button id="btnClear" style="">Clear</calcite-button>
+				<br><br>
+
+			</calcite-accordion-item>
+		</calcite-accordion>
+
+
+
+
+	  <!-- panel populated by site info when clicking on a site -->
+      <calcite-panel id="infoDiv">
+
+        <div class="cd-panel from-right">
+          <header class="cd-panel-header">
+            <h1 id="pnlTitle"></h1>
+            <div id="divSpinner" style="display:none;position:absolute;top:0;right:100px;">
+              <div class="spinner" style="float:left;"></div>
+              <div style="float:left;color:white;" id="procMessage">
+                 Populating Graph...
+              </div>
+            </div>
+          </header>
+    
+          <div class="cd-panel-container">
+            <div class="cd-panel-content">
+              <div id="location-content"></div>
+              <div id="site-location-content"></div>
+              <!-- <div id="divSpinner2" style="display:block;">
+              <div class="spinner" style="float:left;"></div>
+                <div style="float:left;margin-top:10px;">
+                   Populating Graph...
+                </div>
+              </div> -->
+              <div id="graph-message" style="display:none;"><br>No Graph Data</div>
+              <div id="graph-content" style="height:400px;display:none;"></div>
+              <div id="graph-content-flow" style="height:400px;display:none;"></div>
+              <div id="graph_options" class="divFlow" style="padding-left:70px;display:none;">
+                <input type="radio" name="flow" class="flow" value="daily" checked>Daily Average
+                <input type="radio" name="flow" class="flow" value="monthly">Monthly Average
+              </div>
+              <br>
+              <div id="divDownload">
+                <span style="font-size:1.3em;clear:both;float:left;">Data Output</span>
+                <div id="download" style="float:left;clear:both;">
+                  <!-- Date Range: <input type="text" id="fromDate" class="infoDivInput"> to <input type="text" id="toDate" class="infoDivInput"> -->
+				  Date Range: <calcite-input-date-picker id="fromDate" style="width:130px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDate" style="width:130px;></calcite-input-date-picker>
+                  <div id="flowDownload">Data Detail:
+                    <input type="radio" name="flowDownload" class="flowDL" value="all">All
+                    <input type="radio" name="flowDownload" class="flowDL" value="daily" checked>Daily Average
+                    <input type="radio" name="flowDownload" class="flowDL" value="monthly">Monthly Average
+                  </div>
+                </div>
+                <div class="buttonrowleft buttonrow">
+                  <!-- <input type="button" value="Download" id="btnDownload"> -->
+				  <calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownload">Download</calcite-button>
+                </div>
+                <div style="clear:both;"></div>
+              </div>
+            </div> <!-- cd-panel-content -->
+          </div> <!-- cd-panel-container -->
+        </div> <!-- cd-panel -->
+      
+      </calcite-panel>
+
+	  <calcite-panel id="infoDiv2">	
+		<div id="tableDivOuter" style="z-index:1;">	
+		  <div id="tableDivTitle" class="buttonElementWider">	
+			  <!-- <span class="buttonSpan">Results Table</span>	
+			  <span class="closeTable">X</span> -->	
+			  <span class="scrollLayoutR">	
+				  <span class="scrollIconRight hideElement"></span>	
+				  <span class="scrollIconRight hideElement"></span>	
+				  <span class="scrollIconRight hideElement"></span>	
+			  </span>	
+			  <span class="scrollLayoutL">	
+				  <span class="scrollIconLeft hideElement"></span>	
+				  <span class="scrollIconLeft hideElement"></span>	
+				  <span class="scrollIconLeft hideElement"></span>	
+			  </span>	
+		  </div>	
+		  <div id="tableDiv">	
+			  <span style="font-size:1.3em;float:left;">Data Output</span>	
+			  <div id="downloadTable" style="float:left;clear:both;">	
+				  <!-- Date Range: <input type="text" id="fromDateTable" class="infoDivInput"> to <input type="text" id="toDateTable" class="infoDivInput"> -->	
+				  Date Range: <calcite-input-date-picker id="fromDateTable" style="width:130px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDateTable" style="width:130px;></calcite-input-date-picker>	
+			  </div>	
+			  <div id="flowDownloadTable" style="clear:both;float:left;">Data Detail:	
+				  <input type="radio" name="flowDownloadTable" class="flowDLTable" value="all">All	
+				  <input type="radio" name="flowDownloadTable" class="flowDLTable" value="daily" checked>Daily Average	
+				  <input type="radio" name="flowDownloadTable" class="flowDLTable" value="monthly">Monthly Average	
+			  </div>	
+			  <div class="buttonrowleft buttonrow">	
+				  <calcite-button color="blue" style="height:32px;margin-left:6px;position:relative;top:18px;" id="btnDownload">Download</calcite-button>	
+				  <!-- <input type="button" value="Download" > -->	
+			  </div>	
+			  <div id="resultsDiv"></div>	
+		  </div>	
+		</div>	
+	</calcite-panel>
+
+<!-- 	
+	<calcite-panel id="resultesDiv">
+
+	</calcite-panel> 
+-->
+	  
+
+	<calcite-panel id="helpDiv">	
+	  <div class="" style="font-size:18px;"><h2 style="color: #000000;">	
+		<span style="color: #993300;">Groundwater Monitoring Data Portal</span></h2>	
+		<p><span style="font-weight: 400;">The Utah Geological Survey (UGS) developed the <a href="https://apps.geology.utah.gov/gwdp/" target="_blank" rel="noopener">	
+			Groundwater Monitoring Data Portal</a> to store and distribute large quantities of monitoring data acquired through the various monitoring networks that the UGS maintains. The portal allows easy access to view, query, and download groundwater monitoring data from a dataset containing more than 12 million records, including well and piezometer water-level records and spring and surface flow measurements. </span><span style="font-weight: 400;">Individual wells or surface water monitoring locations may be selected and more information is available on their respective pages.</span><span style="font-weight: 400;"> Data may be viewed directly, downloaded in CSV format, or a well or spring summary report may be viewed or downloaded in PDF format. CSV files may be imported into Microsoft Excel or other software for further analysis and plotting. This application would not have been possible without the initial efforts of Kevin Thomas, Quinton Williams, Steve Bowman, Lucy Jordan, and Hugh Hurlow.&nbsp;	
+		</span></p>	<br>
+	  </div>	
+	
+    </calcite-panel>
+	
+
+	
+
+    </div>
+
+  </body>
+</html>
