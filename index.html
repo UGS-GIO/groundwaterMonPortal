@@ -1,5 +1,22 @@
 <html>
   <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-11759067-12"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-11759067-12');
+</script>
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-M7CNXDK');</script>
+<!-- End Google Tag Manager -->
     <meta charset="utf-8" />
     <meta
       name="viewport"
@@ -97,6 +114,14 @@
 		max-height: 700px;
 		overflow-y: auto;
       }
+
+	#btnSearch {
+		height: 32px;
+	}
+
+	#btnClear {
+		height: 32px;
+	}
 
 	/* I made these to over-ride existing rules in the main.css file */
 	  .cd-panel {
@@ -228,7 +253,7 @@ require([
 		center: [-111.3, 39.4] // longitude, latitude
 	});
 
-
+	// the right side results pane w/ pic & graph
 	const resultsExpand = new Expand({
 		collapsedIconClass: "esri-icon-collapse",
 		expandIconClass: "esri-icon-expand",
@@ -240,6 +265,7 @@ require([
 	// add an info div for slider
 	view.ui.add(resultsExpand, "top-right");
 
+	// the bottom left table view pane
 	const tableExpand = new Expand({
 		collapsedIconClass: "esri-icon-collapse",
 		expandIconClass: "esri-icon-expand",
@@ -285,35 +311,35 @@ require([
 
 	// set popup action to open details pane.   see view.popup.on("trigger-action") for function
 	var getDetailsAction = {
-		title: "Site Details",
+		title: "Get Details",
 		id: "site-details",
 		// https://developers.arcgis.com/javascript/latest/guide/esri-icon-font/
 		className: "esri-icon-table"
 	};
 
-	const sitestemplate = {
+	const areastemplate = {
 		actions: [getDetailsAction],
-		title: "Site Info",
+		title: "Site Area Info",
 		content: 
 		"<span class='bold'>Name:</span> {name}<br />" +
 		"<span class='bold'>Wells:</span> {totalwellnumber}<br />"
 	};
 							
-	const siteareas = new FeatureLayer({
+	const waterareas = new FeatureLayer({
 		url: msSite,
-		id: "sites",
+		id: "waterareas",
 		title:"sites",
 		outFields: ["name","totalwellnumber","siteid"],
 		//displayOnPan: false,
-		popupTemplate: sitestemplate,
+		popupTemplate: areastemplate,
 		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))",
 		//visible: true
 	});
-	map.add(siteareas);
+	map.add(waterareas);
 
 	const locationstemplate = {
 		actions: [getDetailsAction],
-		title: "Well Info",
+		title: "Location Info",
 		content: 
 		"ID: {locationid} <br>" +
 		"Name: {locationname} <br>" +
@@ -322,31 +348,30 @@ require([
 		"Location: {county}, {state} <br>"
 	};
 
-	const welllocations = new FeatureLayer({
+	const wellspringlocations = new FeatureLayer({
 		url: msLocation,
-		id: "well-locations",
-		title: "Well Locations",
+		id: "well-spring-locations",
+		title: "Well & Spring Locations",
 		outFields: ["locationid","locationtype","locationdesc", "county","state"],
 		popupTemplate: locationstemplate,
 		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))"
 	});
-	map.add(welllocations);
+	map.add(wellspringlocations);
 
 	// use trigger action to open details pane (make only fire on mobile?)
 	view.popup.on("trigger-action", function(event) {
 		// Execute popup action if clicked		if (event.action.id === "site-details") {
-			console.log(view.popup.viewModel.selectedFeature);
+			console.log(event.action.id);
 			var slayer = view.popup.viewModel.selectedFeature.sourceLayer.id;
-			if (slayer = "well-locations"){
+			if (slayer == "well-spring-locations"){
 				var sid = view.popup.viewModel.selectedFeature.attributes.objectid;
 				LoadLocationData(sid);
-			} else if (slayer = "sites"){
+				//resultsExpand.expand();
+			} else if (slayer == "waterareas"){
 				var sid = view.popup.viewModel.selectedFeature.attributes.siteid;
-				LoadSiteAreaData(sid);
+				//LoadSiteAreaData(sid);   // instead run the function that advanced search runs & get all locations in the area
+
 			}
-			console.log(sid);
-			resultsExpand.expand();
-			//	map.infoWindow.hide();
 	});
 
 	// fires when popup opens (or use clicks arrows!)
@@ -355,15 +380,20 @@ require([
 		if (graphic) {
 			console.log(graphic);  //graphic.layer.id
 			var slayer = view.popup.viewModel.selectedFeature.sourceLayer.id;
-			if (slayer = "well-locations"){
+			console.log("FEATURE CLICKED. TYPE IS: "+slayer); 
+			if (slayer == "well-spring-locations"){
 				var sid = view.popup.viewModel.selectedFeature.attributes.objectid;
 				LoadLocationData(sid);
-			} else if (slayer = "sites"){
+			} else if (slayer == "waterareas"){
 				var sid = view.popup.viewModel.selectedFeature.attributes.siteid;
-				LoadSiteAreaData(sid);
+				//LoadSiteAreaData(sid);
 			}
 		}
 	});
+
+	function LoadResultData(sid){
+		// combine the above into one function?
+	}
 
 	// create & define the map legend
 	const legend = new Legend({
@@ -372,8 +402,8 @@ require([
 		title: "Map Symbol Legend",
 		//layerId: ? is below deprecated?
 		layerInfos: [
-			{layer: siteareas, title: "Site Areas"},
-			{layer: welllocations, title: "Locations"}
+			{layer: waterareas, title: "Site Areas"},
+			{layer: wellspringlocations, title: "Locations"}
 		]
 	});
 
@@ -429,16 +459,16 @@ require([
           includeDefaultSources: false,
           sources: [
             {
-              layer: welllocations,
+              layer: wellspringlocations,
               searchFields: ["locationname", "locationid"],
               displayField: "locationname",
               exactMatch: false,
               outFields: ["*"],
               name: "Spring/Well Locations",
-              placeholder: "PW07"
+              placeholder: "PW07A"
             },
             {
-              layer: siteareas,
+              layer: waterareas,
               searchFields: ["name ", "siteid"],
               //suggestionTemplate: "{name}, Party: {Party}",
               exactMatch: false,
@@ -474,7 +504,7 @@ require([
 
 	//   ---------------------------------------------------   more info function controls  --------------------------------------------------
 
-	$("#btnDownload").click(function() {
+		$("#btnDownload").click(function() {
 			if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
 				return;
 			
@@ -499,6 +529,7 @@ require([
 			})
 		});
 		
+		// for downloading data from all items in table results
 		$("#btnDownloadTable").click(function() {
 			if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
 				return;
@@ -524,7 +555,7 @@ require([
 		});
 		
 
-/*
+		/*
  		function enterKeyPressed(event) {
 			if (event.keyCode == 13) {
 				console.log("Enter key is pressed");
@@ -535,6 +566,11 @@ require([
 		} 
 		*/
 		
+
+		/*
+
+		// DELETE THIS ALL.   PROBABLY FROM ROCKCORE
+
 		$("#btnDraw").click(function() {
 			map.graphics.clear();
 			selectionToolbar.activate(Draw.RECTANGLE);
@@ -589,7 +625,7 @@ require([
 			$("#cancelButton").hide();
 		});
 		
-		var llyr = map.findLayerById('well-locations');
+		var llyr = map.findLayerById('well-spring-locations');
 		$("#Cores").click(function() {
 			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
 		});
@@ -622,60 +658,16 @@ require([
 		
 		function toggleFind(evt) {
 			$("#selectionOptionsInner").toggle();
-			/* if ($('.mobileLayout').is(":visible")) {
-				if (evt != "startup") {
-					toggleMobileFind();
-				}
-			} */
+			 //if ($('.mobileLayout').is(":visible")) {
+				//if (evt != "startup") {
+				//	toggleMobileFind();
+				//}
+				//} 
 		}
 		
+		*/
 
-
-		// when user hits enter key in location box, do search
-		$('#locationName, #siteName').keypress(function(e){
-			if(e.which == 13){   //Enter key pressed
-				console.log("Enter key was pressed");
-				doSearch();
-			}
-		});
-
-
-		// when user changes/selects project area or location type
-		// update the map without having to push search
-		$("#projectSelect").on('change', function(n) {
-			console.log(n.target.value);
-			$("#locationName").val("");
-			$("#siteName").val("");
-			$('#locationTypeSelect').val('').prop('selected', true);
-			$("#locationTypeSelect").trigger('change.select2');   // what does this do?!!!
-			// add definitionexpression here
-			switch(n.target.value) {
-				case "1":
-					var sql = "QWNetworkName = 'Snake Valley'";
-				break;
-				case "2":
-					var sql = "QWNetworkName = 'Ogden Valley'";
-				break;
-				case "3":
-					var sql = "QWNetworkName = 'Moab'";
-				break;
-				case 4:
-					var sql = "QWNetworkName = UGS-NGWMN";
-				break;
-				case "5":
-					var sql = "QWNetworkName = 'Snake Valley Wetlands'";
-				break;
-				case "6":
-					var sql = "QWNetworkName = 'Juab Valley'";
-				break;
-			} 
-			var llyr = map.findLayerById('well-locations');
-			llyr.definitionExpression = sql;
-		});
-		//console.log(projectSelect);
-
-
-
+	
 //fix: hard code these options?  Or at least make the option box a calcite option box
 
 		// populate the select Location type combo dropdown (after load)
@@ -686,6 +678,8 @@ require([
 			$("#btnClear").on('click', doClear);
 		});
 
+		// on load get options for the advanced search combos.
+		// but why not just hard code these in?
 		function getCombos()
 		{
 			console.log("start getting options for 'select location type combo'");
@@ -714,7 +708,7 @@ require([
 		
 		function handleComboResults(results)
 		{
-			console.log(results);
+			console.log("loading combo box options");
 			var projects = results[0];
 			var dataFiles = results[1];
 			localAquifers = results[2];
@@ -764,7 +758,7 @@ require([
 				locationTypeSelect.add(option);
 			}
 
-			//console.log(locationTypeSelect);
+			// does this do anything?  try commenting out
 			document.getElementById("locationTypeSelectAlt").appendChild(locationTypeSelect);
 			$("#locationTypeSelect").select2({
 				placeholder: "Select Location Type",
@@ -772,7 +766,8 @@ require([
 				minimumResultsForSearch: Infinity,
 				allowClear: true
 			});
-			// does what?
+
+			// when user changes/selects location type
 			$("#locationTypeSelect").on('change', function(n) {
 				console.log("select the site location");
 				console.log(n.target.value);
@@ -792,36 +787,67 @@ require([
 						var sql = "WellType = 'Piezometer'";
 					break;
 				} 
-				var llyr = map.findLayerById('well-locations');
+				var llyr = map.findLayerById('well-spring-locations');
 				llyr.definitionExpression = sql;
 				/*
-				const query = welllocations.createQuery();
+				const query = wellspringlocations.createQuery();
 				query.outFields = ["*"];
-				welllocations.queryFeatures(query).then((results) => {
+				wellspringlocations.queryFeatures(query).then((results) => {
 					console.log(result.features); // print the features to the console
 				});
 				*/
 			});
-			
 			$('#projectSelect').val('').prop('selected', true);
-			
 			toggleFind();
 		}
 		
-		/* function handleProjError(error)
-		{
-			console.log(error);
-		}
-		
-		function handleDFError(err)
-		{
-			console.log(err);
-		}
-		
-		function handleLAError(err)
-		{
-			console.log(err);
-		} */
+
+		// when user hits enter key in location box, do search
+		$('#locationName, #siteName').keypress(function(e){
+			if(e.which == 13){   //Enter key pressed
+				console.log("Enter key was pressed");
+				doSearch();
+			}
+		});
+
+		// when user changes/selects project area or location type
+		// update the map without having to push search
+		$("#projectSelectAlt").on('change', function(n) {
+			console.log(n.target.value);
+			$("#locationName").val("");
+			$("#siteName").val("");
+			$('#locationTypeSelect').val('').prop('selected', true);
+			$("#locationTypeSelect").trigger('change.select2');   // what does this do?!!!
+			// add definitionexpression here
+			// use "AltLocationContext" instead of network name?
+			switch(n.target.value) {
+				case "1":
+					var sql = "WLNetworkName = 'Snake Valley'";
+				break;
+				case "2":
+					var sql = "WLNetworkName = 'Ogden Valley'";
+				break;
+				case "3":
+					var sql = "WLNetworkName = 'Courthouse Wash'";
+				break;
+				case 4:
+					var sql = "WLNetworkName = UGS-NGWMN";
+				break;
+				case "5":
+					var sql = "WLNetworkName = 'Snake Valley Wetlands'";
+				break;
+				case "6":
+					var sql = "WLNetworkName = 'Juab Valley'";
+				break;
+			} 
+			var llyr = map.findLayerById('well-spring-locations');
+			llyr.definitionExpression = sql;
+		});
+		//console.log(projectSelect);
+
+
+
+
 		
 		function getLocalAquifer(code)
 		{
@@ -832,7 +858,6 @@ require([
 					return localAquifers.features[i].attributes.Name;
 				}
 			}
-			
 			return "";
 		}
 		
@@ -892,9 +917,10 @@ require([
 		
 		function handleMultiNotesResults(results)
 		{
-			//for(var i = 0; i < results.features.length; i++)
-			//{
-				/* var obj = results.features[0].attributes;
+			/* 
+			for(var i = 0; i < results.features.length; i++)
+			{
+				var obj = results.features[0].attributes;
 				var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': 'noteTable' + obj.typeid}, 'locNotes' + obj.typeid);
 				//var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': 'noteTable' + obj.typeid}, 'locNotes1');
 				var headerArray = ["Date", "Note"];
@@ -903,8 +929,9 @@ require([
 				var row = dojo.create('tr', {'class':'huntTableHeader'}, thead);
 				for (var j=0; j<headerArray.length; j++) {
 					var thElement = dojo.create('th', {'class': 'tcol'+(j+1), 'id':'huntCol'+j, 'innerHTML':headerArray[j]}, row);
-				} */
-			//}
+				} 
+			}
+			*/
 
 			for(var i = 0; i < results.features.length; i++)
 			{
@@ -931,6 +958,8 @@ require([
 			console.log("Notes Error: ", error);
 		} */
 		
+
+		// fired when user clicks on a site
 		function LoadLocationData(locID)
 		{
 			//let qtLoc = new QueryTask(msLocation);
@@ -973,7 +1002,7 @@ require([
 				res.imagepath = "no-image-available-new.jpg";
 			}
 			
-			console.log(res);
+			//console.log(res);
 			$("#location-content").append((res.locationid == null ? "" : "<span>ID: " + res.locationid + "</span><br>"))
 				.append((res.locationdesc == null ? "" : "<br><span>Description: " + res.locationdesc + "</span><br>"))
 				.append((res.imagepath == null ? "" : "<a href='./images/" + res.imagepath + "' target='_blank'><img src='./images/" + res.imagepath + "' width='300px' alt='No Image'></img></a>") + "<br>")
@@ -1042,14 +1071,14 @@ require([
 			$("#graph-content").hide();
 			$("#graph-content-flow").hide();
 			$("#graph-message").hide();
-			$("#divDownload").show();
+			$("#csv-download").show();
 
 			console.log("alt location id = "+ res.altlocationid);
 			if(res.altlocationid == null)
 			{
 				$("#graph-message").show();
 				$("#divSpinner").hide();
-				$("#divDownload").hide();
+				$("#csv-download").hide();
 				return;
 			}
 			
@@ -1107,10 +1136,15 @@ require([
 				$.post("getFlowData.php", { locID: id.replace(/'/g, ""), type: type }, function(data){
 					//console.log(data);
 					data = JSON.parse(data);
-					if(data.length > 0)
+					if(data.length > 0) {
+						console.log("php got data successfully");
 						graphFlowData(data, hideSpin);
-					else
+					} else {
+						console.log("no data returned from php, hiding download options");
 						$("#graph-content-flow").hide();
+						$("#graph-options").hide();
+						$("#csv-download").hide();
+					}
 				})
 				.fail(function() {
 					alert("Failed to fetch data from the db.");
@@ -1147,12 +1181,14 @@ require([
       		);
 		}
 
+		// graph springs
 		function graphFlowData(data, hideSpin)
 		{
-			console.log("starting graphFlowData() - charts for springs?");
+			console.log("starting graphFlowData() - charts for springs");
 			var arrLocs = [];
 			var graphs = [];
-			//console.log(data);
+			console.log(data);
+
 			for(var i = 0; i < gl.locs.length; i++)
 			{
 				if(gl.locs[i].attributes.locationtype.toLowerCase() != "spring")
@@ -1176,8 +1212,6 @@ require([
 						"hideBulletsCount": 50
 				});
 			}
-//console.log(arrLocs);
-
 
 			chartFlow = AmCharts.makeChart("graph-content-flow",
 			{
@@ -1267,15 +1301,20 @@ require([
 			chartFlow.validateData();
 			chartFlow.animateAgain();
 			
+			// if there's no data hide the graph & download
 			if(chartFlow.dataProvider.length > 0)
 			{
+				console.log('data found, showing graph');
 				$("#graph-content-flow").show();
-				$("#graph_options").show();
+				$("#graph-options").show();
+				$("#csv-download").show();
 				$("#graph-message").hide();
 			}
 			else
 			{
+				console.log('no data to graph so hide the download, etc');
 				$("#graph-message").show();
+				$("#csv-download").hide();
 			}
 
 			if(chartFlow.dataProvider.length > 100)
@@ -1291,10 +1330,17 @@ require([
 			//console.log(chartData);
 		}
 		
+		// graph wells?
 		function handleGraphResults(results)
 		{
-			console.log("starting handleGraphResults function - water elevation am chart for wells?");
+			console.log("starting handleGraphResults function - water elevation am chart FOR WELLS");
 			console.log(results);
+			if (results.features.length == 0){
+				console.log('if no data to graph, hide download');
+				$("#divSpinner").hide();
+				$("#csv-download").hide();
+				return;
+			}
 			var res = gl.loc[0].attributes;
 			chart = AmCharts.makeChart("graph-content",
 			{
@@ -1427,7 +1473,7 @@ require([
 				$("#graph-message").show();
 			}
 
-			res.locationtype.toLowerCase() == "spring" ? $("#graph_options").show() : $("graph_options").hide();
+			res.locationtype.toLowerCase() == "spring" ? $("#graph-options").show() : $("graph-options").hide();
 		}
 		
 		function zoomChart(chrt) {
@@ -1445,6 +1491,7 @@ require([
 			getFlowData(flowIDs, $(this).val(), true);
 		});
 		
+		/*
 		function LoadSiteAreaData(siteID)
 		{
 			$("#divSpinner").show();
@@ -1465,10 +1512,10 @@ require([
 			//promises = new all([qtSite.execute(qSite, null, handleSiteError), qtNotes.execute(qNotes, null, handleSiteError)]);
 			//promises.then(handleSiteResults);
 			query.executeQueryJSON(msSite,qSite).then(handleSiteResults);
-			query.executeQueryJSON(msNotes,qNotes).then(handleSiteResults);
-			
+			query.executeQueryJSON(msNotes,qNotes).then(handleSiteResults);   //why does this fire?
 		}
 		
+		// get sites to put in results
 		function handleSiteResults(results)
 		{
 			var res = results[0].features;
@@ -1534,10 +1581,6 @@ require([
 			loadSiteLocations(siteID);
 		}
 		
-		/* function handleSiteError(error)
-		{
-			console.log(error);
-		} */
 		
 		function loadSiteLocations(site)
 		{
@@ -1550,6 +1593,7 @@ require([
 			//qtLocs.execute(qLocs, handleLocsResults, handleLocsError);
 			query.executeQueryJSON(msLocation,qLocs).then(handleLocsResults);
 		}
+		*/
 
 		function imageExists(image_url){
 			console.log("checking if image exists. next line will give HEAD error in console if no image is there.");
@@ -1875,17 +1919,20 @@ require([
 			console.log("MultiGraphError: ", err);
 		} */
 		
+		// rename this function, zoom is a dumb name
+		// populates the date pickers on the results pane
 		function handleZoom(e)
 		{
-			console.log("handleZoom function firing");
-			var dtStart = new Date(e.startDate);
-			var dtEnd = new Date(e.endDate);
-			$("#fromDate").val(dtStart.toLocaleDateString());
-			$("#toDate").val(dtEnd.toLocaleDateString());
+			console.log("handleZoom function firing: "+e);
+			var dtStart = new Date(e.startDate).toISOString().split('T')[0];
+			var dtEnd = new Date(e.endDate).toISOString().split('T')[0];
+			$("#fromDate").prop("value", dtStart );
+			$("#toDate").prop("value", dtEnd );
 		}
 		
+		// probably delete comment these out, not sure what they do......
 		$(document).on("input", "#siteName", function() {
-			console.log("line 1719");
+			console.log("trigger with each sitename input change?  why?");
 			$("#locationName").val("");
 			$('#projectSelect').val('').prop('selected', true);
 			$("#projectSelect").trigger('change.select2');
@@ -1894,7 +1941,7 @@ require([
 		});
 		
 		$(document).on("input", "#locationName", function() {
-			console.log("line 1727");
+			console.log("trigger with each locationname input change?  why?");
 			$("#siteName").val("");
 			$('#projectSelect').val('').prop('selected', true);
 			$("#projectSelect").trigger('change.select2');
@@ -1902,6 +1949,7 @@ require([
 			$("#locationTypeSelect").trigger('change.select2');
 		});
 		
+		// when user hits the search button on advanced search
 		function doSearch()
 		{
 			locIDs = "";
@@ -1928,7 +1976,7 @@ require([
 				let qLocs = new Query();
 				qLocs.returnGeometry = false;
 				qLocs.outFields = ["*"];
-				qLocs.where = "locationid LIKE '%" + loc + "%' OR LOWER(locationname) LIKE '%" + loc + "%'";
+				qLocs.where = "locationid LIKE '%" + loc + "%' OR LOWER(locationname) LIKE  LOWER('%" + loc + "%')";
 				
 				//qtLocs.execute(qLocs, handleqLocsResults, handleqLocsError);
 				query.executeQueryJSON(msLocation, qLocs).then(handleqLocsResults);
@@ -1957,8 +2005,8 @@ require([
 			}
 			else
 			{
-				var slyr = map.findLayerById('sites');
-				var llyr = map.findLayerById('well-locations');
+				var slyr = map.findLayerById('waterareas');
+				var llyr = map.findLayerById('well-spring-locations');
 				llyr.definitionExpression = "1=1";
 				slyr.definitionExpression = "1=1";
 				getAllSitesAndLocs();
@@ -1985,8 +2033,8 @@ require([
 				return;
 			}
 
-			var slyr = map.findLayerById('sites');
-			var llyr = map.findLayerById('well-locations');
+			var slyr = map.findLayerById('waterareas');
+			var llyr = map.findLayerById('well-spring-locations');
 			if(locIDs.length > 0)
 				llyr.definitionExpression = "objectid IN (" + locIDs + ")";
 			else
@@ -2030,9 +2078,7 @@ require([
 			var locs = results[1].features;
 			loadComplaintTable(sites, "site", true);
 			loadComplaintTable(locs, "loc", false);
-			
-			$("#mapToggle").addClass("showTable");
-			mapToggle();
+			toggleTableDivVisibility();
 		}
 		
 		function getAllSitesAndLocs()
@@ -2069,16 +2115,15 @@ require([
 			}
 			siteIDs = siteIDs.slice(0, -2);
 			
-			var slyr = map.findLayerById('sites');
-			var llyr = map.findLayerById('well-locations');
+			var slyr = map.findLayerById('waterareas');
+			var llyr = map.findLayerById('well-spring-locations');
 			if(siteIDs.length > 0)
 			{
 				console.log(llyr);
 				slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
 				llyr.definitionExpression = "1=2";
 				loadComplaintTable(res, "site", true);
-				$("#mapToggle").addClass("showTable");
-				mapToggle();
+				toggleTableDivVisibility();
 			}
 			else
 				console.log("no site areas matching query");
@@ -2099,17 +2144,15 @@ require([
 				locIDs += attr.objectid + ", ";
 			}
 			locIDs = locIDs.slice(0, -2);
-			
-			var slyr = map.findLayerById('sites');
-			var llyr = map.findLayerById('well-locations');
-			console.log();
+			console.log("site area id's: "+ locIDs);
+			var slyr = map.findLayerById('waterareas');
+			var llyr = map.findLayerById('well-spring-locations');
 			if(locIDs.length > 0)
 			{
 				llyr.definitionExpression = "objectid IN (" + locIDs + ")";
-				slyr.definitionExpression = "1=2";
+				slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
 				loadComplaintTable(res, "loc", true);
-				$("#mapToggle").addClass("showTable");
-				mapToggle();
+				toggleTableDivVisibility();
 			}
 			else
 				llyr.definitionExpression = "1=2";
@@ -2120,7 +2163,7 @@ require([
 			console.log(error);
 		} */
 		
-		//Create the table view of hunts.
+		//Create the table view of hunts.  Is this even being used?
 		function loadComplaintTable(data, type, clear) {
 			// output a table of the array
 			if(clear)
@@ -2240,6 +2283,7 @@ require([
 			//$('#btnSelAll:not(.bound)').addClass('bound').on("click", selectElementContents);
 		}
 		
+		// comment out?  not used now? (only referenced from row click above^)
 		function compPicked(evt)
 		{
 			var id = evt.target.parentElement.cells[0].textContent;
@@ -2265,16 +2309,17 @@ require([
 			$("#siteName").val("");
 			$("#locationName").val("");
 			
-			var slyr = map.findLayerById('sites');
-			var llyr = map.findLayerById('well-locations');
+			var slyr = map.findLayerById('waterareas');
+			var llyr = map.findLayerById('well-spring-locations');
 			llyr.definitionExpression = "1=1";
 			slyr.definitionExpression = "1=1";
 			
 			dojo.empty(resultsDiv);
-			//$("#mapToggle").removeClass("showTable");  // turn off the highligt on the toggle button
+			tableExpand.collapse();
+			resultsExpand.collapse();
 		}
 		
-		function mapToggle(evt) {
+		function toggleTableDivVisibility(evt) {
 			if ($("#resultsDiv").html() != "") {
 				tableExpand.expand();
 			} else {
@@ -2342,10 +2387,10 @@ require([
 				<div id="locationSearch" class="searchbox" style="border:1px solid grey;width:100%;"></div>
 			
 			</calcite-accordion-item>
-			<calcite-accordion-item icon="table" item-title="Advanced Search" item-subtitle="Search for multiple resulsts">
+			<calcite-accordion-item icon="table" item-title="Advanced Search" item-subtitle="Search for multiple results">
 
 				<br>
-				<calcite-label>Spring or Well Location ID or Name<calcite-input id="locationName" value="PW07" onkeypress=""></calcite-input></calcite-label>
+				<calcite-label>Spring or Well Location ID or Name<calcite-input id="locationName" value="PW07A" onkeypress=""></calcite-input></calcite-label>
 
                 <calcite-label>Site Area Name<calcite-input type="text" id="siteName" value=""></calcite-input></calcite-label>
 
@@ -2374,14 +2419,16 @@ require([
 				</calcite-label>
 				-->
 
-				<calcite-label>Select Project<div id="projectSelectAlt" class="filterElement"></div></calcite-label>				
-				<calcite-label>Select Location Type<div id="locationTypeSelectAlt" class="filterElement"></div></calcite-label>
+                <calcite-button id="btnSearch" style="float:left">Search</calcite-button>&nbsp;
+				<calcite-button id="btnClear" style="">Clear</calcite-button>
+				<br><hr><br>
+
+				<calcite-label>Select by Project<div id="projectSelectAlt" class="filterElement"></div></calcite-label>				
+				<calcite-label>Select by Location Type<div id="locationTypeSelectAlt" class="filterElement"></div></calcite-label>
 				
 				<br>
 
-                <calcite-button id="btnSearch" style="float:left">Search</calcite-button>&nbsp;
-				<calcite-button id="btnClear" style="">Clear</calcite-button>
-				<br><br>
+
 
 			</calcite-accordion-item>
 		</calcite-accordion>
@@ -2416,26 +2463,30 @@ require([
               <div id="graph-message" style="display:none;"><br>No Graph Data</div>
               <div id="graph-content" style="height:400px;display:none;"></div>
               <div id="graph-content-flow" style="height:400px;display:none;"></div>
-              <div id="graph_options" class="divFlow" style="padding-left:70px;display:none;">
+              <div id="graph-options" class="divFlow" style="padding-left:70px;display:none;">
                 <input type="radio" name="flow" class="flow" value="daily" checked>Daily Average
                 <input type="radio" name="flow" class="flow" value="monthly">Monthly Average
               </div>
               <br>
-              <div id="divDownload">
+              <div id="csv-download">
                 <span style="font-size:1.3em;clear:both;float:left;">Data Output</span>
                 <div id="download" style="float:left;clear:both;">
                   <!-- Date Range: <input type="text" id="fromDate" class="infoDivInput"> to <input type="text" id="toDate" class="infoDivInput"> -->
-				  Date Range: <calcite-input-date-picker id="fromDate" style="width:130px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDate" style="width:130px;></calcite-input-date-picker>
+				  Date Range: <calcite-input-date-picker locale="en" min="" id="fromDate" style="width:135px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDate" locale="en" value="" style="width:135px;"></calcite-input-date-picker>
                   <div id="flowDownload">Data Detail:
                     <input type="radio" name="flowDownload" class="flowDL" value="all">All
                     <input type="radio" name="flowDownload" class="flowDL" value="daily" checked>Daily Average
                     <input type="radio" name="flowDownload" class="flowDL" value="monthly">Monthly Average
                   </div>
+				  <div class="buttonrowleft buttonrow">
+					<!-- <input type="button" value="Download" id="btnDownload"> -->
+					<calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownload">Download</calcite-button>
+				  </div>
                 </div>
-                <div class="buttonrowleft buttonrow">
-                  <!-- <input type="button" value="Download" id="btnDownload"> -->
-				  <calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownload">Download</calcite-button>
-                </div>
+
+				
+
+
                 <div style="clear:both;"></div>
               </div>
             </div> <!-- cd-panel-content -->
@@ -2462,9 +2513,9 @@ require([
 		  </div>	
 		  <div id="tableDiv">	
 			  <span style="font-size:1.3em;float:left;">Data Output</span>	
-			  <div id="downloadTable" style="float:left;clear:both;">	
-				  <!-- Date Range: <input type="text" id="fromDateTable" class="infoDivInput"> to <input type="text" id="toDateTable" class="infoDivInput"> -->	
-				  Date Range: <calcite-input-date-picker id="fromDateTable" style="width:130px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDateTable" style="width:130px;></calcite-input-date-picker>	
+			 <!--  
+				 <div id="downloadTable" style="float:left;clear:both;">	
+				  Date Range: <calcite-input-date-picker id="fromDateTable" locale="en" style="width:136px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDateTable" locale="en" style="width:136px;"></calcite-input-date-picker>	
 			  </div>	
 			  <div id="flowDownloadTable" style="clear:both;float:left;">Data Detail:	
 				  <input type="radio" name="flowDownloadTable" class="flowDLTable" value="all">All	
@@ -2472,9 +2523,9 @@ require([
 				  <input type="radio" name="flowDownloadTable" class="flowDLTable" value="monthly">Monthly Average	
 			  </div>	
 			  <div class="buttonrowleft buttonrow">	
-				  <calcite-button color="blue" style="height:32px;margin-left:6px;position:relative;top:18px;" id="btnDownload">Download</calcite-button>	
-				  <!-- <input type="button" value="Download" > -->	
-			  </div>	
+				  <calcite-button color="blue" style="height:32px;margin-left:6px;position:relative;top:18px;" id="btnDownloadTable">Download</calcite-button>	
+			  </div>	 
+			  -->
 			  <div id="resultsDiv"></div>	
 		  </div>	
 		</div>	
@@ -2490,8 +2541,8 @@ require([
 	<calcite-panel id="helpDiv">	
 	  <div class="" style="font-size:18px;"><h2 style="color: #000000;">	
 		<span style="color: #993300;">Groundwater Monitoring Data Portal</span></h2>	
-		<p><span style="font-weight: 400;">The Utah Geological Survey (UGS) developed the <a href="https://apps.geology.utah.gov/gwdp/" target="_blank" rel="noopener">	
-			Groundwater Monitoring Data Portal</a> to store and distribute large quantities of monitoring data acquired through the various monitoring networks that the UGS maintains. The portal allows easy access to view, query, and download groundwater monitoring data from a dataset containing more than 12 million records, including well and piezometer water-level records and spring and surface flow measurements. </span><span style="font-weight: 400;">Individual wells or surface water monitoring locations may be selected and more information is available on their respective pages.</span><span style="font-weight: 400;"> Data may be viewed directly, downloaded in CSV format, or a well or spring summary report may be viewed or downloaded in PDF format. CSV files may be imported into Microsoft Excel or other software for further analysis and plotting. This application would not have been possible without the initial efforts of Kevin Thomas, Quinton Williams, Steve Bowman, Lucy Jordan, and Hugh Hurlow.&nbsp;	
+		<p><span style="font-weight: 400;">
+			The Utah Geological Survey (UGS) developed the Groundwater Monitoring Data Portal to store and distribute large quantities of monitoring data acquired through the various monitoring networks that the UGS maintains. The portal allows easy access to view, query, and download groundwater monitoring data from a dataset containing more than 12 million records, including well and piezometer water-level records and spring and surface flow measurements. Individual wells or surface water monitoring locations may be selected and additional information is available to view when clicking on their respective "Site Details" button. Data may be viewed directly in the "Site Details" panel, downloaded in CSV format, or a well or spring summary report may be viewed or downloaded in PDF format. CSV files may be imported into Microsoft Excel or other software for further analysis and plotting. This application would not have been possible without the initial efforts of Kevin Thomas, Quinton Williams, Steve Bowman, Lucy Jordan, and Hugh Hurlow. Continued efforts from Paul Inkenbrandt, Lance Weaver, and Martha Jensen keep this application in working order.
 		</span></p>	<br>
 	  </div>	
 	
