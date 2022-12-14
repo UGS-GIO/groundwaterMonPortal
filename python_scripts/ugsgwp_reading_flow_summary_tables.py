@@ -2,7 +2,7 @@ import psycopg2
 
 #Database connection information
 user="sde"
-password="OGU5MmM0MzhmODMwMjRkZWJl"
+password=""
 host="postgres.geology.utah.gov"
 port="5432"
 database="ugsgwp"
