@@ -1,0 +1,29 @@
+Select duplicates on two columns:
+
+SELECT readingdate, locationid, COUNT(*) FROM ugs_gw_reading
+GROUP BY readingdate, locationid
+HAVING COUNT (*)>1;
+
+Delete duplicates by using data from two columns:
+select distinct on (a,b) * from test1 ORDER BY a,b
+
+my code for ugsgwp (select distinct on)
+CREATE TABLE ugs_gw_reading AS
+SELECT DISTINCT ON (readingdate,locationid)* FROM ugs_gw_reading_allvalues ORDER BY readingdate, locationid
+
+The difference between select distinct and select distinct on -- select distinct looks over all the columns and sees if the data is 
+different, while select distinct on only looks at the columns you specify.  Therefore, if you know what columns you 
+want to look at, select distinct on is the better choice.  In this example, I was trying to see if there were any
+repeat records in the database, based on the reading date and location id column (as described by Paul I).  However, 
+since the rows were repeat rows in the database, select distinct and select distinct on produced the exact same result.  
+The other thing to know about select distinct on is that it selects the first record of the duplicate rows and only
+keeps the first record.  Therefore, if needed, I could sort on a date field to keep the newest record before i ran 
+select distinct on.
+
+To use the above script, first I would create a table called ugs_gw_reading_allvalues by using this sql
+CREATE TABLE ugs_gw_reading_allvalues as SELECT * from ugs_gw_readings
+
+Once that table was created, I would drop/delete the readings table and then run the create readings table script above. This should all be done on a replica database - not on the production database 
+and then implement on production. 
+
+The other way to do this is to find all the duplicates using the first script, then select and delete them in arcgis. 

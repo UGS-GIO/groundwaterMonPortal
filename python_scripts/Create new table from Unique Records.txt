@@ -1,0 +1,12 @@
+
+CREATE TABLE ugs_gw_reading AS
+SELECT DISTINCT ON (readingdate,locationid)* FROM ugs_gw_reading_allvalues ORDER BY readingdate, locationid
+
+CREATE TABLE ugs_gw_flow AS
+SELECT DISTINCT ON (flowdate,locationid)* FROM ugs_gw_flow_allvalues ORDER BY flowdate, locationid
+
+
+*If a table has _allvalues in its name, its because I ran a select distinct on it so that I could create a unique index (i.e. if there
+if all records aren't unique records, a unique index can't be created)
+
+
