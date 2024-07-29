@@ -1,15 +1,14 @@
 <html>
   <head>
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-11759067-12"></script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-983EZBYB1K"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'UA-11759067-12');
+  gtag('config', 'G-983EZBYB1K');
 </script>
-
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -90,7 +89,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 		font-size: 14px;
         padding: 10px;
         width: 450px; 
-		max-height: 700px;
+		max-height:90vh;
 		overflow-y: auto;
       }
 
@@ -333,6 +332,7 @@ require([
 		//displayOnPan: false,
 		popupTemplate: areastemplate,
 		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))",
+		opacity: 0.3
 		//visible: true
 	});
 	map.add(waterareas);
@@ -353,6 +353,7 @@ require([
 		id: "well-spring-locations",
 		title: "Well & Spring Locations",
 		outFields: ["locationid","locationtype","locationdesc", "county","state"],
+		definitionExpression: "display = '1'",
 		popupTemplate: locationstemplate,
 		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))"
 	});
@@ -363,13 +364,16 @@ require([
 		// Execute popup action if clicked		if (event.action.id === "site-details") {
 			console.log(event.action.id);
 			var slayer = view.popup.viewModel.selectedFeature.sourceLayer.id;
+			console.log(slayer);
 			if (slayer == "well-spring-locations"){
+				console.log('fire1');
 				var sid = view.popup.viewModel.selectedFeature.attributes.objectid;
 				LoadLocationData(sid);
-				//resultsExpand.expand();
+				resultsExpand.expand();
 			} else if (slayer == "waterareas"){
+				console.log('fire2');
 				var sid = view.popup.viewModel.selectedFeature.attributes.siteid;
-				//LoadSiteAreaData(sid);   // instead run the function that advanced search runs & get all locations in the area
+				LoadSiteAreaData(sid);   // instead run the function that advanced search runs & get all locations in the area
 
 			}
 	});
@@ -505,18 +509,23 @@ require([
 	//   ---------------------------------------------------   more info function controls  --------------------------------------------------
 
 		$("#btnDownload").click(function() {
+
 			if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
 				return;
 			
 			downloading = true;
 			$("#procMessage").text("Downloading Data...");
 			$("#divSpinner").show();
-			var fromdate = $("#fromDate").val();
-			var todate = $("#toDate").val();
+
+			var fromdate = document.getElementById('fromDate').valueAsDate.toISOString().split('T')[0]
+			var todate  = document.getElementById('toDate').valueAsDate.toISOString().split('T')[0];
 			var type = $("input[name='flowDownload']:checked").val();
 			
 			$.post("downloadData.php", { wellIDs: gl.locIDs, fromdate: fromdate, todate: todate, type: type }, function(data){
-				console.log(data); //return url
+				//console.log(data); //return url
+				//console.log(type); 
+				//console.log(fromdate); 
+				//console.log(todate); 
 				$("body").append("<iframe src='" + data + "' style='visibility:hidden;display:none' ></iframe>");
 			})
 			.fail(function() {
@@ -537,8 +546,9 @@ require([
 			downloading = true;
 			/* $("#procMessage").text("Downloading Data...");
 			$("#divSpinner").show(); */
-			var fromdate = $("#fromDateTable").val();
-			var todate = $("#toDateTable").val();
+			//var fromdate = $("#fromDateTable").val();
+			var fromdate = document.getElementById('fromDateTable').valueAsDate.toISOString().split('T')[0]
+			var todate  = document.getElementById('toDateTable').valueAsDate.toISOString().split('T')[0];
 			var type = $("input[name='flowDownloadTable']:checked").val();
 			console.log(gl);
 			$.post("downloadData.php", { siteIDs: gl.siteIDs, wellIDs: gl.locIDs, fromdate: fromdate, todate: todate, type: type }, function(data){
@@ -1071,6 +1081,7 @@ require([
 			$("#graph-content").hide();
 			$("#graph-content-flow").hide();
 			$("#graph-message").hide();
+			$("#graph-content-additional").hide();
 			$("#csv-download").show();
 
 			console.log("alt location id = "+ res.altlocationid);
@@ -1115,7 +1126,24 @@ require([
 				qGraph.orderByFields = ["readingdate"];
 				//qtGraph.execute(qGraph, handleGraphResults, handleGraphError);
 				query.executeQueryJSON(msReadings,qGraph).then(handleGraphResults);
+
+				//console.log(res);   // test with CHWNAV  CHWENT
+				//if(res.altlocationid == 138 || res.altlocationid == 139  || res.altlocationid == 140  || res.altlocationid == 141)
+				// change this to look for 'hascond' in msLocation table
+				if (res.hascond == 1)  // this must be manually updated every time condcutivity is added to a site, only 4 exist
+				{
+					console.log("ONE of Lucy's data points!");
+					qGraph = new Query();
+					qGraph.returnGeometry = false;
+					qGraph.where = "locationid = " + res.altlocationid;
+					qGraph.outFields = ["readingdate, conductivity"];
+					qGraph.orderByFields = ["readingdate"];
+					query.executeQueryJSON(msReadings,qGraph).then(additionalGraphResults);
+				}
+
 			}
+
+
 		}
 		
 		/* function handleLocError(error)
@@ -1144,6 +1172,7 @@ require([
 						$("#graph-content-flow").hide();
 						$("#graph-options").hide();
 						$("#csv-download").hide();
+						$("#graph-content-additional").hide();
 					}
 				})
 				.fail(function() {
@@ -1475,6 +1504,147 @@ require([
 
 			res.locationtype.toLowerCase() == "spring" ? $("#graph-options").show() : $("graph-options").hide();
 		}
+
+
+		// add second well results for Lucy
+		function additionalGraphResults(results)
+		{
+			console.log("ADDING an additional table for lucy");
+			console.log(results);
+			if (results.features.length == 0){
+				console.log('if no data to graph, hide download');
+				$("#divSpinner").hide();
+				$("#csv-download").hide();
+				return;
+			}
+			var res = gl.loc[0].attributes;
+			chart = AmCharts.makeChart("graph-content-additional",
+			{
+				"type":"serial",
+				"listeners": [{
+					"event": "zoomed",
+					"method": handleZoom
+				}],
+				"marginRight": 40,
+				"marginLeft": 40,
+				"autoMarginOffset": 20,
+				"categoryField":results.fields[0].name,
+				"mouseWheelScrollEnabled": true,
+				"mouseWheelZoomEnabled": true,
+				"theme":"light",
+				"creditsPosition": "bottom-right",
+				"categoryAxis": {
+					"gridPosition":"start",
+					"parseDates": true,
+					"minPeriod": "mm"
+				},
+				"trendLines":[],
+				"graphs": [
+					{
+					"balloonText":"[[" + results.fields[0].name + "]] : [[value]]",
+					"bullet":"round",
+					"bulletBorderAlpha": 1,
+					"bulletColor": "#6C92B7",
+					"bulletSize": 5,
+					"lineThickness": 1,
+					"lineColor": "#6C92B7",
+					"title": "red line",
+					"useLineColorForBulletBorder": true,
+					"id":"Graph1",
+					"title":res.locationname,
+					// might have to match with data value
+					"valueField":results.fields[1].name,
+					"hideBulletsCount": 50
+					}
+				],
+				"chartScrollbar": {
+					"graph":"Graph1",
+					"updateOnReleaseOnly": true,
+					"oppositeAxis":false,
+					"offset":25,
+					"scrollbarHeight": 20,
+					"backgroundColor": "#6C92B7",
+					"selectedBackgroundColor": "6C92B7",
+					"graphFillAlpha": 0,
+					"graphLineAlpha": 0.5,
+					"selectedGraphFillAlpha": 0,
+					"selectedGraphLineAlpha": 1,
+					"autoGridCount":false,
+					"dragIcon": "dragIconRectSmall",
+					"dragIconHeight": 25,
+					"color":"#FFFFFF"
+				},
+				"chartCursor": {
+					"valueLineEnabled": false,
+					"valueLineBalloonEnabled": false,
+					"cursorAlpha":1,
+					"cursorColor":"#333333",
+					"valueLineAlpha":1,
+					"valueZoomable":true,
+					"categoryBalloonDateFormat":"M/DD/YY L:NN A"
+				},
+				"guides":[],
+				"valueAxes":[
+					{
+						"id":"ValueAxis-1",
+						"title":results.fields[1].alias + " (µS/cm)"
+					}
+				],
+				"allLabels":[],
+				"balloon": [],
+				"legend":{
+					"enabled":true,
+					"useGraphSettings":true,
+					"valueText":""
+				},
+				"export": {
+					"enabled": true
+				}
+			});
+			
+			var chartData = [];
+			
+			results = results.features;
+			for(var i = 0; i < results.length; i++)
+			{
+				if(results[i].attributes.flowdate != null)
+				{
+					var dt = new Date(results[i].attributes.flowdate);
+					var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
+					dt = new Date(utc);
+					// note: these need to match exactly with the 'category field' and 'value field' defined above
+					chartData.push({flowdate: dt.toLocaleString(), discharge: results[i].attributes.discharge});
+				}
+				else
+				{
+					var dt = new Date(results[i].attributes.readingdate);
+					var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
+					dt = new Date(utc);
+					// note: these need to match exactly with the 'category field' and 'value field' defined above
+					chartData.push({readingdate: dt.toLocaleString(), conductivity: results[i].attributes.conductivity});
+				}
+			}
+			
+			console.log("adding data to chart!");
+			//console.log(chartData);
+			chart.dataProvider = chartData;
+			chart.validateData();
+			chart.animateAgain();
+			
+			chart.addListener("rendered", zoomChart);
+
+			if(chart.dataProvider.length > 100)
+				zoomChart(chart);
+
+			if(results.length > 0)
+			{
+				$("#graph-content-additional").show();
+			}
+			else
+			{
+				$("#graph-content-additional").hide();
+			}
+		}
 		
 		function zoomChart(chrt) {
 			if(chrt.dataProvider != null)
@@ -1491,7 +1661,7 @@ require([
 			getFlowData(flowIDs, $(this).val(), true);
 		});
 		
-		/*
+	
 		function LoadSiteAreaData(siteID)
 		{
 			$("#divSpinner").show();
@@ -1593,7 +1763,7 @@ require([
 			//qtLocs.execute(qLocs, handleLocsResults, handleLocsError);
 			query.executeQueryJSON(msLocation,qLocs).then(handleLocsResults);
 		}
-		*/
+		
 
 		function imageExists(image_url){
 			console.log("checking if image exists. next line will give HEAD error in console if no image is there.");
@@ -1610,6 +1780,7 @@ require([
 			$("#divSpinner").show();
 			$("#graph-content").hide();
 			$("#graph-content-flow").hide();
+			$("#graph-content-additional").hide();
 			$("#graph-message").hide();
 			var allRes = results.features;
 			var locIDs = "";
@@ -2354,7 +2525,7 @@ require([
 		}); */
 
 
-
+$("#helpDiv").show();
 
 });    // end dojo.require
 
@@ -2367,16 +2538,11 @@ require([
   </head>
 
   <body>
-
-
-	<!--
-      <calcite-block collapsible="false" heading="Utah Groundwater Monitoring Portal" summary="from the Utah Geological Survey">
-        <calcite-icon scale="s" slot="icon" icon="add-in"></calcite-icon>
-      </calcite-block>
-	-->
-
-      <div id="viewDiv">
-
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M7CNXDK"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+		<div id="viewDiv"></div>
 
 
 		<calcite-accordion id="searchwin" heading="Search" scale="l" selection-mode="single" style="width:340px;">
@@ -2428,17 +2594,12 @@ require([
 				
 				<br>
 
-
-
 			</calcite-accordion-item>
 		</calcite-accordion>
 
 
-
-
 	  <!-- panel populated by site info when clicking on a site -->
       <calcite-panel id="infoDiv">
-
         <div class="cd-panel from-right">
           <header class="cd-panel-header">
             <h1 id="pnlTitle"></h1>
@@ -2469,7 +2630,7 @@ require([
               </div>
               <br>
               <div id="csv-download">
-                <span style="font-size:1.3em;clear:both;float:left;">Data Output</span>
+                <span style="font-size:1.3em;clear:both;float:left;">Groundwater Elevation Data Output</span>
                 <div id="download" style="float:left;clear:both;">
                   <!-- Date Range: <input type="text" id="fromDate" class="infoDivInput"> to <input type="text" id="toDate" class="infoDivInput"> -->
 				  Date Range: <calcite-input-date-picker locale="en" min="" id="fromDate" style="width:135px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDate" locale="en" value="" style="width:135px;"></calcite-input-date-picker>
@@ -2483,16 +2644,13 @@ require([
 					<calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownload">Download</calcite-button>
 				  </div>
                 </div>
-
-				
-
-
+			  
                 <div style="clear:both;"></div>
-              </div>
+              </div><hr>
+			  <div id="graph-content-additional" style="height:400px;display:none;"></div>	
             </div> <!-- cd-panel-content -->
           </div> <!-- cd-panel-container -->
         </div> <!-- cd-panel -->
-      
       </calcite-panel>
 
 	  <calcite-panel id="infoDiv2">	
@@ -2512,7 +2670,7 @@ require([
 			  </span>	
 		  </div>	
 		  <div id="tableDiv">	
-			  <span style="font-size:1.3em;float:left;">Data Output</span>	
+			  <span style="font-size:1.3em;float:left;">Groundwater Elevation Data Output</span>	
 			 <!--  
 				 <div id="downloadTable" style="float:left;clear:both;">	
 				  Date Range: <calcite-input-date-picker id="fromDateTable" locale="en" style="width:136px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDateTable" locale="en" style="width:136px;"></calcite-input-date-picker>	
@@ -2538,20 +2696,19 @@ require([
 -->
 	  
 
-	<calcite-panel id="helpDiv">	
+	<calcite-panel id="helpDiv" style="display:none;">	
 	  <div class="" style="font-size:18px;"><h2 style="color: #000000;">	
 		<span style="color: #993300;">Groundwater Monitoring Data Portal</span></h2>	
 		<p><span style="font-weight: 400;">
-			The Utah Geological Survey (UGS) developed the Groundwater Monitoring Data Portal to store and distribute large quantities of monitoring data acquired through the various monitoring networks that the UGS maintains. The portal allows easy access to view, query, and download groundwater monitoring data from a dataset containing more than 12 million records, including well and piezometer water-level records and spring and surface flow measurements. Individual wells or surface water monitoring locations may be selected and additional information is available to view when clicking on their respective "Site Details" button. Data may be viewed directly in the "Site Details" panel, downloaded in CSV format, or a well or spring summary report may be viewed or downloaded in PDF format. CSV files may be imported into Microsoft Excel or other software for further analysis and plotting. This application would not have been possible without the initial efforts of Kevin Thomas, Quinton Williams, Steve Bowman, Lucy Jordan, and Hugh Hurlow. Continued efforts from Paul Inkenbrandt, Lance Weaver, and Martha Jensen keep this application in working order.
+			The Utah Geological Survey (UGS) developed the Groundwater Monitoring Data Portal to store and distribute large quantities of monitoring data acquired through the various monitoring networks that the UGS maintains. The portal allows easy access to view, query, and download groundwater monitoring data from a dataset containing more than 12 million records, including well and piezometer water-level records and spring and surface flow measurements. Individual wells or surface water monitoring locations may be selected and additional information is available to view when clicking on their respective "Site Details" button. Data may be viewed directly in the "Site Details" panel, downloaded in CSV format, or a well or spring summary report may be viewed or downloaded in PDF format. CSV files may be imported into Microsoft Excel or other software for further analysis and plotting. This application would not have been possible without the initial efforts of Kevin Thomas, Quinton Williams, Steve Bowman, Lucy Jordan, and Hugh Hurlow. Continued efforts from Paul Inkenbrandt, Lance Weaver, and Nate Payne keep this application in working order.
 		</span></p>	<br>
 	  </div>	
-	
     </calcite-panel>
 	
 
 	
 
-    </div>
+
 
   </body>
 </html>
