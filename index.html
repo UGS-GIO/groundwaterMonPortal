@@ -507,63 +507,129 @@ require([
 
 
 	//   ---------------------------------------------------   more info function controls  --------------------------------------------------
+// Function to download groundwater data
+function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
+  const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
+  
+  console.log('Initial wellIds:', wellIds);
 
-		$("#btnDownload").click(function() {
+  // Ensure wellIds is an array
+  if (!Array.isArray(wellIds)) {
+    wellIds = [wellIds];
+  }
 
-			if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
-				return;
-			
-			downloading = true;
-			$("#procMessage").text("Downloading Data...");
-			$("#divSpinner").show();
+  console.log('Processed wellIds:', wellIds);
 
-			var fromdate = document.getElementById('fromDate').valueAsDate.toISOString().split('T')[0]
-			var todate  = document.getElementById('toDate').valueAsDate.toISOString().split('T')[0];
-			var type = $("input[name='flowDownload']:checked").val();
-			
-			$.post("downloadData.php", { wellIDs: gl.locIDs, fromdate: fromdate, todate: todate, type: type }, function(data){
-				//console.log(data); //return url
-				//console.log(type); 
-				//console.log(fromdate); 
-				//console.log(todate); 
-				$("body").append("<iframe src='" + data + "' style='visibility:hidden;display:none' ></iframe>");
-			})
-			.fail(function() {
-				alert("Download Error");
-			})
-			.always(function() {
-				downloading = false;
-				$("#procMessage").text("Populating Graph...");
-				$("#divSpinner").hide();
-			})
-		});
-		
-		// for downloading data from all items in table results
-		$("#btnDownloadTable").click(function() {
-			if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
-				return;
-			
-			downloading = true;
-			/* $("#procMessage").text("Downloading Data...");
-			$("#divSpinner").show(); */
-			//var fromdate = $("#fromDateTable").val();
-			var fromdate = document.getElementById('fromDateTable').valueAsDate.toISOString().split('T')[0]
-			var todate  = document.getElementById('toDateTable').valueAsDate.toISOString().split('T')[0];
-			var type = $("input[name='flowDownloadTable']:checked").val();
-			console.log(gl);
-			$.post("downloadData.php", { siteIDs: gl.siteIDs, wellIDs: gl.locIDs, fromdate: fromdate, todate: todate, type: type }, function(data){
-				$("body").append("<iframe src='" + data + "' style='visibility:hidden;display:none;' ></iframe>");
-			})
-			.fail(function() {
-				alert("Download Error");
-			})
-			.always(function() {
-				downloading = false;
-				/* $("#procMessage").text("Populating Graph...");
-				$("#divSpinner").hide(); */
-			})
-		});
-		
+  // Create promises for each well ID
+  const promises = wellIds.map(wellId => {
+    console.log('Processing wellId:', wellId);
+    const params = new URLSearchParams({
+      p_well_id: wellId,
+      p_type: dataType,
+      p_from_date: fromDate,
+      p_to_date: toDate
+    });
+    const url = `${baseUrl}?${params}`;
+    console.log('Fetch URL:', url);
+
+    return fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Data received for wellId:', wellId, data);
+      return data.map(row => row.row_data).join('\n');
+    });
+  });
+
+  // Wait for all promises to resolve
+  return Promise.all(promises)
+    .then(results => {
+      // Combine results from all wells
+      const csvContent = results.join('\n');
+
+      // Create a Blob with the CSV content
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+      // Create a download link and trigger the download
+      const link = document.createElement("a");
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `groundwater_data_${new Date().toISOString()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while downloading the data. Please try again.');
+    });
+}
+
+// Event listener for the main download button
+$("#btnDownload").click(function() {
+  if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
+    return;
+
+  downloading = true;
+  $("#procMessage").text("Downloading Data...");
+  $("#divSpinner").show();
+
+  var fromdate = document.getElementById('fromDate').valueAsDate.toISOString().split('T')[0];
+  var todate = document.getElementById('toDate').valueAsDate.toISOString().split('T')[0];
+  var type = $("input[name='flowDownload']:checked").val();
+
+  console.log('Download button clicked. Parameters:', {
+    wellIds: gl.locIDs,
+    type: type,
+    fromdate: fromdate,
+    todate: todate
+  });
+
+  downloadGroundwaterData(gl.locIDs, type, fromdate, todate)
+    .catch(function(error) {
+      console.error('Download error:', error);
+      alert("Download Error: " + error.message);
+    })
+    .finally(function() {
+      downloading = false;
+      $("#procMessage").text("Populating Graph...");
+      $("#divSpinner").hide();
+    });
+});
+
+
+// Event listener for downloading data from all items in table results
+$("#btnDownloadTable").click(function() {
+  if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
+    return;
+
+  downloading = true;
+
+  var fromdate = document.getElementById('fromDateTable').valueAsDate.toISOString().split('T')[0];
+  var todate = document.getElementById('toDateTable').valueAsDate.toISOString().split('T')[0];
+  var type = $("input[name='flowDownloadTable']:checked").val();
+
+  // Assuming gl.locIDs contains all the well IDs for the table
+  downloadGroundwaterData(gl.locIDs, type, fromdate, todate)
+    .catch(function() {
+      alert("Download Error");
+    })
+    .finally(function() {
+      downloading = false;
+    });
+});
 
 		/*
  		function enterKeyPressed(event) {
@@ -1153,38 +1219,116 @@ require([
 		 */	
 
 
-		function getFlowData(id, type, hideSpin)
-		{
-			if (!id){
-				console.log("There was no flow well id. This is probalby a well. Aborting getflowdata.php");
-				return;
-			} else {
-				// regex: replace all quotes '' with nothing (ie remove single quotes)
-				console.log("getflowdata(php) variables= "+ id +", "+type);
-				$.post("getFlowData.php", { locID: id.replace(/'/g, ""), type: type }, function(data){
-					//console.log(data);
-					data = JSON.parse(data);
-					if(data.length > 0) {
-						console.log("php got data successfully");
-						graphFlowData(data, hideSpin);
-					} else {
-						console.log("no data returned from php, hiding download options");
-						$("#graph-content-flow").hide();
-						$("#graph-options").hide();
-						$("#csv-download").hide();
-						$("#graph-content-additional").hide();
-					}
-				})
-				.fail(function() {
-					alert("Failed to fetch data from the db.");
-				})
-				.always(function() {
-					$("#procMessage").text("Populating Graph...");
-					if(hideSpin)
-						$("#divSpinner").hide();
-				})
-			} //end else
-		}
+		 //New poostgrest call
+		 function getFlowData(id, type, hideSpin) {
+    if (!id) {
+        console.log("There was no flow well id. This is probably a well. Aborting get_flow_data.");
+        return;
+    }
+
+    if (type !== 'daily' && type !== 'monthly') {
+        console.error("Invalid type provided. Must be 'daily' or 'monthly'.");
+        return;
+    }
+
+    console.log("get_flow_data variables= " + id + ", " + type);
+
+    // Remove single quotes from id
+    const sanitizedId = id.replace(/'/g, "");
+
+    // Construct the URL with query parameters
+    const url = new URL('https://ugs-koop-umfdxaxiyq-wm.a.run.app/rpc/get_flow_data');
+    url.searchParams.append('p_loc_ids', sanitizedId);
+    url.searchParams.append('p_type', type);
+
+    console.log("Fetching data from URL:", url.toString());
+
+    fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Raw data received:", data);
+
+        if (data && Array.isArray(data) && data.length > 0) {
+            console.log("Data fetched successfully");
+            console.log("First item structure:", JSON.stringify(data[0], null, 2));
+
+            // Transform the data to match the expected format
+            const transformedData = data.map(item => ({
+                flowdate: item.flow_date,
+                discharge: parseFloat(item.discharge)
+            }));
+
+            console.log("Transformed data:", transformedData);
+
+            if (typeof graphFlowData === 'function') {
+                graphFlowData(transformedData, hideSpin);
+            } else {
+                console.error("graphFlowData is not a function", typeof graphFlowData);
+            }
+        } else {
+            console.log("No data returned or data is not in expected format", data);
+            $("#graph-content-flow").hide();
+            $("#graph-options").hide();
+            $("#csv-download").hide();
+            $("#graph-content-additional").hide();
+        }
+    })
+    .catch(error => {
+        console.error('Error details:', error);
+        alert("Failed to fetch data from the db. Check the console for more details.");
+    })
+    .finally(() => {
+        $("#procMessage").text("Populating Graph...");
+        if (hideSpin) {
+            $("#divSpinner").hide();
+        }
+    });
+}
+
+		// function getFlowData(id, type, hideSpin)
+		// {
+		// 	if (!id){
+		// 		console.log("There was no flow well id. This is probalby a well. Aborting getflowdata.php");
+		// 		return;
+		// 	} else {
+		// 		// regex: replace all quotes '' with nothing (ie remove single quotes)
+		// 		console.log("getflowdata(php) variables= "+ id +", "+type);
+		// 		$.post("getFlowData.php", { locID: id.replace(/'/g, ""), type: type }, function(data){
+		// 			//console.log(data);
+		// 			data = JSON.parse(data);
+		// 			if(data.length > 0) {
+		// 				console.log("php got data successfully");
+		// 				graphFlowData(data, hideSpin);
+		// 			} else {
+		// 				console.log("no data returned from php, hiding download options");
+		// 				$("#graph-content-flow").hide();
+		// 				$("#graph-options").hide();
+		// 				$("#csv-download").hide();
+		// 				$("#graph-content-additional").hide();
+		// 			}
+		// 		})
+		// 		.fail(function() {
+		// 			alert("Failed to fetch data from the db.");
+		// 		})
+		// 		.always(function() {
+		// 			$("#procMessage").text("Populating Graph...");
+		// 			if(hideSpin)
+		// 				$("#divSpinner").hide();
+		// 		})
+		// 	} //end else
+		// }
 		
 
 		// lance:  my new attempt to change the chart from amcharts to dygraphs
