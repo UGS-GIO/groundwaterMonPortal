@@ -510,43 +510,58 @@ require([
 // Function to download groundwater data
 function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
   const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
-  
-  console.log('Initial wellIds:', wellIds);
+  const postgrestUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
 
+  console.log('Initial wellIds:', wellIds);
   // Ensure wellIds is an array
   if (!Array.isArray(wellIds)) {
     wellIds = [wellIds];
   }
-
   console.log('Processed wellIds:', wellIds);
 
   // Create promises for each well ID
   const promises = wellIds.map(wellId => {
-    console.log('Processing wellId:', wellId);
-    const params = new URLSearchParams({
-      p_well_id: wellId,
-      p_type: dataType,
-      p_from_date: fromDate,
-      p_to_date: toDate
-    });
-    const url = `${baseUrl}?${params}`;
-    console.log('Fetch URL:', url);
-
-    return fetch(url, {
+    // Fetch the altlocationid for the given objectid using PostgREST
+    return fetch(`${postgrestUrl}?objectid=eq.${wellId}&select=altlocationid`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
       }
     })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-      console.log('Data received for wellId:', wellId, data);
-      return data.map(row => row.row_data).join('\n');
+      if (data && data.length > 0) {
+        const altlocationid = data[0].altlocationid;
+        console.log('Processing wellId:', wellId, 'altlocationid:', altlocationid);
+        const params = new URLSearchParams({
+          p_well_id: altlocationid.toString(),
+          p_type: dataType,
+          p_from_date: fromDate,
+          p_to_date: toDate
+        });
+        const url = `${baseUrl}?${params}`;
+        console.log('Fetch URL:', url);
+        return fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(text => {
+              throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Data received for wellId:', wellId, 'altlocationid:', altlocationid, data);
+          return data.map(row => row.row_data).join('\n');
+        });
+      } else {
+        throw new Error(`No altlocationid found for objectid: ${wellId}`);
+      }
     });
   });
 
@@ -555,10 +570,8 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
     .then(results => {
       // Combine results from all wells
       const csvContent = results.join('\n');
-
       // Create a Blob with the CSV content
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
       // Create a download link and trigger the download
       const link = document.createElement("a");
       if (link.download !== undefined) {
@@ -1813,7 +1826,7 @@ $("#btnDownloadTable").click(function() {
 			let qSite = new Query();
 			qSite.returnGeometry = false;
 			qSite.outFields = ["*"];
-			qSite.where = "siteid = '" + siteID + "'";
+			qSite.where = "siteid = siteID";
 			
 			//let qtNotes = new QueryTask(msNotes);
 			let qNotes = new Query();
@@ -1821,7 +1834,7 @@ $("#btnDownloadTable").click(function() {
 			qNotes.orderByFields = ["datetime DESC"];
 			qNotes.outFields = ["*"];
 			
-			qNotes.where = "typeid = '" + siteID + "' AND type = 'S'";
+			qNotes.where = "typeid = " + siteID + " AND type = 'S'";
 			
 			//promises = new all([qtSite.execute(qSite, null, handleSiteError), qtNotes.execute(qNotes, null, handleSiteError)]);
 			//promises.then(handleSiteResults);
