@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION sde.get_flow_data(
+CREATE OR REPLACE FUNCTION gwportal.get_flow_data(
     p_loc_ids TEXT,
     p_type TEXT
 )
@@ -24,7 +24,7 @@ BEGIN
             SELECT 
                 to_char(FLOWDATE, ''MM/DD/YYYY'') as flow_date, 
                 TRUNC(Sum(Discharge) / COUNT(CAST(FLOWDATE as Date)), 4) as discharge 
-            FROM sde.UGS_GW_FLOW 
+            FROM gwportal.UGS_GW_FLOW 
             WHERE LOCATIONID IN (%s) 
             GROUP BY to_char(FLOWDATE, ''MM/DD/YYYY''), CAST(FLOWDATE as Date) 
             ORDER BY CAST(FLOWDATE as date)', p_loc_ids);
@@ -33,7 +33,7 @@ BEGIN
             SELECT 
                 CAST(EXTRACT(MONTH FROM flowdate) as varchar) || ''/'' || CAST(EXTRACT(YEAR FROM flowdate) AS varchar) as flow_date, 
                 TRUNC(Sum(Discharge) / COUNT(CAST(EXTRACT(YEAR FROM flowdate) AS varchar) || ''-'' || RIGHT (''00'' || CAST(EXTRACT(MONTH FROM flowdate) AS varchar), 2)), 4) as discharge 
-            FROM sde.UGS_GW_FLOW 
+            FROM gwportal.UGS_GW_FLOW 
             WHERE LOCATIONID IN (%s) 
             GROUP BY 
                 CAST(EXTRACT(YEAR FROM flowdate) AS varchar) || ''-'' || RIGHT(''00'' || CAST(EXTRACT(MONTH FROM flowdate) AS varchar), 2), 
@@ -48,4 +48,4 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Grant necessary permissions
-GRANT EXECUTE ON FUNCTION sde.get_flow_data(TEXT, TEXT) TO web_anon;
+GRANT EXECUTE ON FUNCTION gwportal.get_flow_data(TEXT, TEXT) TO web_anon;

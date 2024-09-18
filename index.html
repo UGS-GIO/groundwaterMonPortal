@@ -213,6 +213,8 @@ require([
 	"esri/Map", 
 	"esri/views/MapView",
 	"esri/layers/FeatureLayer",
+	"esri/layers/WFSLayer",
+	"esri/layers/ogc/wfsUtils",
 	"esri/widgets/Expand",
 	"esri/widgets/BasemapGallery",
 	"esri/widgets/Search",
@@ -227,7 +229,7 @@ require([
 	"dojo/promise/all",
 	"dojo/on"
 ], (
-	Map, MapView, FeatureLayer, Expand, BasemapGallery, Search, query, Query, QueryTask, PopupTemplate, Legend, StatisticDefinition, dojo, domConstruct, all, on
+	Map, MapView, FeatureLayer, WFSLayer, WFSUtils, Expand, BasemapGallery, Search, query, Query, QueryTask, PopupTemplate, Legend, StatisticDefinition, dojo, domConstruct, all, on
 	) => {
 
 	var gl = {};
@@ -291,7 +293,9 @@ require([
 	const msScreen = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/1";
 	const msLith = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/2";
 	const msSite = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/3";
-	const msLocation = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/4";
+	//const msLocation = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/4";
+	//https://ugs-geoserver-prod-flbcoqv7oa-uc.a.run.app/geoserver/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=Groundwater%3Augs_ngwmn_monitoring_locations&OUTPUTFORMAT=json&SRSNAME=EPSG%3A26912&STARTINDEX=0&COUNT=3000
+	const msLocation = "https://ugs-geoserver-prod-flbcoqv7oa-uc.a.run.app/geoserver/wfs";
 	const msProject = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/5";
 	const msPhyChem = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/6";
 	const msStates = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/7";
@@ -305,6 +309,8 @@ require([
 	const msP2SW = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/15";
 	const msDataFiles = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/16";
 	const msNotes = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/17";
+
+	
 
 
 
@@ -348,8 +354,10 @@ require([
 		"Location: {county}, {state} <br>"
 	};
 
-	const wellspringlocations = new FeatureLayer({
+	const wellspringlocations = new WFSLayer({
 		url: msLocation,
+		name: "ugs_ngwmn_monitoring_locations",
+		namespaceuri: "groundwater",
 		id: "well-spring-locations",
 		title: "Well & Spring Locations",
 		outFields: ["locationid","locationtype","locationdesc", "county","state"],
@@ -513,6 +521,7 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
   const postgrestUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
 
   console.log('Initial wellIds:', wellIds);
+
   // Ensure wellIds is an array
   if (!Array.isArray(wellIds)) {
     wellIds = [wellIds];
@@ -1062,6 +1071,8 @@ $("#btnDownloadTable").click(function() {
 			//qtLoc.execute(qLoc, handleLocResults);
 		}
 
+
+
 		// populates the primary well/spring information on the flyout pane
 		// whats the dif between this and handleLocsResults?
 		function handleLocResults(results)
@@ -1164,6 +1175,7 @@ $("#btnDownloadTable").click(function() {
 			$("#csv-download").show();
 
 			console.log("alt location id = "+ res.altlocationid);
+			
 			if(res.altlocationid == null)
 			{
 				$("#graph-message").show();

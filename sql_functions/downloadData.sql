@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION sde.get_groundwater_data(
+CREATE OR REPLACE FUNCTION gwportal.get_groundwater_data(
     p_well_id TEXT,
     p_type TEXT,
     p_from_date DATE,
@@ -41,7 +41,7 @@ BEGIN
            loggertype::TEXT,
            barologgertype::TEXT
     INTO v_metadata
-    FROM sde.ugs_ngwmn_monitoring_locations
+    FROM gwportal.ugs_ngwmn_monitoring_locations
     WHERE altlocationid = p_well_id::integer;
 
     IF NOT FOUND THEN
@@ -80,7 +80,7 @@ BEGIN
                 r.waterelevation::TEXT,
                 NULL::TEXT as discharge,
                 NULL::TEXT as comment
-            FROM sde.reading r
+            FROM gwportal.reading r
             WHERE r.locationid = $1
               AND r.readingdate BETWEEN $2 AND $3
         ';
@@ -99,7 +99,7 @@ BEGIN
                     AVG(r.waterelevation)::TEXT as waterelevation,
                     NULL::TEXT as discharge,
                     NULL::TEXT as comment
-                FROM sde.reading r
+                FROM gwportal.reading r
                 WHERE r.locationid = $1
                   AND r.readingdate BETWEEN $2 AND $3
                 GROUP BY date_trunc(''day'', r.readingdate)
@@ -118,7 +118,7 @@ BEGIN
                     AVG(r.waterelevation)::TEXT as waterelevation,
                     NULL::TEXT as discharge,
                     NULL::TEXT as comment
-                FROM sde.reading r
+                FROM gwportal.reading r
                 WHERE r.locationid = $1
                   AND r.readingdate BETWEEN $2 AND $3
                 GROUP BY date_trunc(''month'', r.readingdate)
@@ -138,8 +138,8 @@ BEGIN
                 NULL::TEXT as waterelevation,
                 f.discharge::TEXT,
                 c.comment::TEXT
-            FROM sde.ugs_gw_flow f
-            LEFT JOIN sde.ugs_gw_comments c ON c.comment_id = f.comments
+            FROM gwportal.ugs_gw_flow f
+            LEFT JOIN gwportal.ugs_gw_comments c ON c.comment_id = f.comments
             WHERE f.locationid = $1
               AND f.flowdate BETWEEN $2 AND $3
         ';
@@ -158,8 +158,8 @@ BEGIN
                     NULL::TEXT as waterelevation,
                     AVG(f.discharge)::TEXT as discharge,
                     string_agg(DISTINCT c.comment::TEXT, ''; '') as comment
-                FROM sde.ugs_gw_flow f
-                LEFT JOIN sde.ugs_gw_comments c ON c.comment_id = f.comments
+                FROM gwportal.ugs_gw_flow f
+                LEFT JOIN gwportal.ugs_gw_comments c ON c.comment_id = f.comments
                 WHERE f.locationid = $1
                   AND f.flowdate BETWEEN $2 AND $3
                 GROUP BY date_trunc(''day'', f.flowdate)
@@ -178,8 +178,8 @@ BEGIN
                     NULL::TEXT as waterelevation,
                     AVG(f.discharge)::TEXT as discharge,
                     string_agg(DISTINCT c.comment::TEXT, ''; '') as comment
-                FROM sde.ugs_gw_flow f
-                LEFT JOIN sde.ugs_gw_comments c ON c.comment_id = f.comments
+                FROM gwportal.ugs_gw_flow f
+                LEFT JOIN gwportal.ugs_gw_comments c ON c.comment_id = f.comments
                 WHERE f.locationid = $1
                   AND f.flowdate BETWEEN $2 AND $3
                 GROUP BY date_trunc(''month'', f.flowdate)
