@@ -1451,13 +1451,14 @@ $("#btnDownloadTable").click(function() {
 			var arrLocs = [];
 			var graphs = [];
 			console.log(data);
+			console.log(gl.locs);
 
 			for(var i = 0; i < gl.locs.length; i++)
 			{
-				if(gl.locs[i].attributes.locationtype.toLowerCase() != "spring")
+				if(gl.locs[i].locationtype.toLowerCase() != "spring")
 					continue;
 
-				arrLocs.push(gl.locs[i].attributes.altlocationid);
+				arrLocs.push(gl.locs[i].altlocationid);
 				graphs.push({
 						"balloonText":"[[flowdate]] : [[value]]",
 						"bullet":"round",
@@ -1470,8 +1471,8 @@ $("#btnDownloadTable").click(function() {
 						"title": "red line",
 						"useLineColorForBulletBorder": true,
 						"id":"Graph" + i,
-						"title":gl.locs[i].attributes.locationname,
-						"valueField":"discharge" + arrLocs.indexOf(gl.locs[i].attributes.altlocationid),
+						"title":gl.locs[i].locationname,
+						"valueField":"discharge" + arrLocs.indexOf(gl.locs[i].altlocationid),
 						"hideBulletsCount": 50
 				});
 			}
