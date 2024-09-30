@@ -1605,7 +1605,7 @@ $("#btnDownloadTable").click(function() {
 				$("#csv-download").hide();
 				return;
 			}
-			var res = gl.loc[0].attributes;
+			var res = gl.loc[0];
 			chart = AmCharts.makeChart("graph-content",
 			{
 				"type":"serial",
