@@ -360,7 +360,7 @@ require([
 		namespaceuri: "groundwater",
 		id: "well-spring-locations",
 		title: "Well & Spring Locations",
-		outFields: ["locationid","locationtype","locationdesc", "county","state"],
+		outFields: ["*"],
 		definitionExpression: "display = '1'",
 		popupTemplate: locationstemplate,
 		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))"
@@ -1095,7 +1095,7 @@ $("#btnDownloadTable").click(function() {
 			$("#site-location-content").empty();
 			gl.locIDs = res.objectid;
 			console.log(res.imagepath);
-			var path = "./images/"+res.imagepath;
+			var path = "https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F"+res.imagepath;
 			// some images aren't there, some have blank spaces, so test
 			if (!res.imagepath || res.imagepath.length < 3 || !imageExists(path) ){
 				console.log("no images!");
@@ -1105,7 +1105,7 @@ $("#btnDownloadTable").click(function() {
 			//console.log(res);
 			$("#location-content").append((res.locationid == null ? "" : "<span>ID: " + res.locationid + "</span><br>"))
 				.append((res.locationdesc == null ? "" : "<br><span>Description: " + res.locationdesc + "</span><br>"))
-				.append((res.imagepath == null ? "" : "<a href='./images/" + res.imagepath + "' target='_blank'><img src='./images/" + res.imagepath + "' width='300px' alt='No Image'></img></a>") + "<br>")
+				.append((res.imagepath == null ? "" : "<a href='https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F" + res.imagepath + "' target='_blank'><img src='https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F" + res.imagepath + "' width='300px' alt='No Image'></img></a>") + "<br>")
 				.append("<br><span>Location Information " + (res.horizontalcoordrefsystem == null ? "" : "(" + res.horizontalcoordrefsystem + ")") + "</span><br>")
 				.append((res.latitude == null ? "" : "<span>Latitude: " + res.latitude + "</span><br>"))
 				.append((res.longitude == null ? "" : "<span>Longitude: " + res.longitude + "</span><br>"))
@@ -1970,7 +1970,7 @@ $("#btnDownloadTable").click(function() {
 						locIDs += "'" + res.altlocationid + "',";
 				}
 				// check to see if image exists, if not assign noimage.jpg
-				var path = "./images/"+res.imagepath;
+				var path = "https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F"+res.imagepath;
 				if ( !imageExists(path) ){
 					res.imagepath = "no-image-available.jpg";
 				}
@@ -1980,7 +1980,7 @@ $("#btnDownloadTable").click(function() {
 					.append($("<div style='display:none;'>")
 						.append((res.locationid == null ? "" : "<span>ID: " + res.locationid + "</span><br>"))
 						.append((res.locationdesc == null ? "" : "<br><span>Description: " + res.locationdesc + "</span><br>"))
-						.append((res.imagepath == null || res.imagepath.length <= 0 ? "" : "<a href='./images/" + res.imagepath + "' target='_blank'><img src='./images/" + res.imagepath + "' width='300px' alt='No Image'></img></a>") + "<br>")
+						.append((res.imagepath == null || res.imagepath.length <= 0 ? "" : "<a href='https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F" + res.imagepath + "' target='_blank'><img src='https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F" + res.imagepath + "' width='300px' alt='No Image'></img></a>") + "<br>")
 						.append("<br><span>Location Information " + (res.horizontalcoordrefsystem == null ? "" : "(" + res.horizontalcoordrefsystem + ")") + "</span><br>")
 						.append((res.latitude == null ? "" : "<span>Latitude: " + res.latitude + "</span><br>"))
 						.append((res.longitude == null ? "" : "<span>Longitude: " + res.longitude + "</span><br>"))
