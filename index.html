@@ -426,13 +426,13 @@ require([
 		//resultsExpand.collapse();
 		if (graphic) {
 			console.log(graphic);  //graphic.layer.id
-			var slayer = view.popup.viewModel.selectedFeature.sourceLayer.id;
+			var slayer = graphic.sourceLayer.id;
 			console.log("FEATURE CLICKED. TYPE IS: "+slayer); 
 			if (slayer == "well-spring-locations"){
-				var sid = view.popup.viewModel.selectedFeature.attributes.objectid;
+				var sid = graphic.attributes.__esri_wfs_id__.split('.').pop();
 				LoadLocationData(sid);
 			} else if (slayer == "waterareas"){
-				var sid = view.popup.viewModel.selectedFeature.attributes.siteid;
+				var sid = graphic.attributes.siteid;
 				//LoadSiteAreaData(sid);
 			}
 		}
@@ -1092,19 +1092,49 @@ $("#btnDownloadTable").click(function() {
 		} */
 		
 
-		// fired when user clicks on a site
-		function LoadLocationData(locID)
-		{
-			//let qtLoc = new QueryTask(msLocation);
-			let qLoc = new Query();
-			qLoc.returnGeometry = false;
-			qLoc.outFields = ["*"];
-			qLoc.objectIds = [locID];
-			//qLoc.where = "objectid = '" + locID + "'";
+		async function LoadLocationData(locID) {
+			console.log(locID);
+    const endpoint = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
+    
+    try {
+        const response = await fetch(`${endpoint}?objectid=eq.${locID}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
 
-			query.executeQueryJSON(msLocation,qLoc).then(handleLocResults)
-			//qtLoc.execute(qLoc, handleLocResults);
-		}
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.length === 0) {
+            console.log(`No location found with objectid: ${locID}`);
+            return;
+        }
+
+        handleLocResults({ features: data });
+    } catch (error) {
+        console.error('Error fetching location data:', error);
+    }
+}
+
+
+		// // fired when user clicks on a site -----------OLD-------------
+		// function LoadLocationData(locID)
+		// {
+		// 	//let qtLoc = new QueryTask(msLocation);
+		// 	let qLoc = new Query();
+		// 	qLoc.returnGeometry = false;
+		// 	qLoc.outFields = ["*"];
+		// 	qLoc.objectIds = [locID];
+		// 	//qLoc.where = "objectid = '" + locID + "'";
+
+		// 	query.executeQueryJSON(msLocation,qLoc).then(handleLocResults)
+		// 	//qtLoc.execute(qLoc, handleLocResults);
+		// }
 
 
 
@@ -1122,7 +1152,7 @@ $("#btnDownloadTable").click(function() {
 			var res = results.features;
 			gl.loc = res;
 			gl.locs = res;
-			res = res[0].attributes;
+			res = res[0];
 
 			$("pnlTitle").empty();
 			$("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
