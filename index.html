@@ -354,6 +354,38 @@ require([
 		"Location: {county}, {state} <br>"
 	};
 
+	 // Create the renderer with inline SimpleMarkerSymbol definitions
+	 const locationsRenderer = new UniqueValueRenderer({
+    field: "locationtype",
+    defaultSymbol: new SimpleMarkerSymbol({
+      color: "gray",
+      size: "10px"
+    }),
+    uniqueValueInfos: [{
+      value: "wells",
+      symbol: new SimpleMarkerSymbol({
+        color: "#FF0000",
+        outline: {
+          color: [255, 255, 255, 0.5],
+          width: 0.5
+        },
+        size: "10px"
+      }),
+      label: "Wells"
+    }, {
+      value: "springs",
+      symbol: new SimpleMarkerSymbol({
+        color: "#0000FF",
+        outline: {
+          color: [255, 255, 255, 0.5],
+          width: 0.5
+        },
+        size: "10px"
+      }),
+      label: "Springs"
+    }]
+  });
+
 	const wellspringlocations = new WFSLayer({
 		url: msLocation,
 		name: "ugs_ngwmn_monitoring_locations",
@@ -363,6 +395,7 @@ require([
 		outFields: ["*"],
 		definitionExpression: "display = '1'",
 		popupTemplate: locationstemplate,
+		renderer: locationsRenderer,
 		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))"
 	});
 	map.add(wellspringlocations);
