@@ -52,7 +52,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 
 
-
     <style>
 
       html,
@@ -1140,167 +1139,158 @@ $("#btnDownloadTable").click(function() {
 
 		// populates the primary well/spring information on the flyout pane
 		// whats the dif between this and handleLocsResults?
-		function handleLocResults(results)
-		{
-			console.log(results)		
-			if(chart != null)
-			{
-				chart.clear();
-				chart = null;
-			}
-			$("#divSpinner").show();
-			var res = results.features;
-			gl.loc = res;
-			gl.locs = res;
-			res = res[0];
-
-			$("pnlTitle").empty();
-			$("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
-			$("#location-content").empty();
-			$("#site-location-content").empty();
-			gl.locIDs = res.objectid;
-			console.log(res.imagepath);
-			var path = "https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F"+res.imagepath;
-			// some images aren't there, some have blank spaces, so test
-			if (!res.imagepath || res.imagepath.length < 3 || !imageExists(path) ){
-				console.log("no images!");
-				res.imagepath = "no-image-available-new.jpg";
-			}
-			
-			//console.log(res);
-			$("#location-content").append((res.locationid == null ? "" : "<span>ID: " + res.locationid + "</span><br>"))
-				.append((res.locationdesc == null ? "" : "<br><span>Description: " + res.locationdesc + "</span><br>"))
-				.append((res.imagepath == null ? "" : "<a href='https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F" + res.imagepath + "' target='_blank'><img src='https://firebasestorage.googleapis.com/v0/b/ut-dnr-ugs-gwmapportal-prod.appspot.com/o/images%2F" + res.imagepath + "' width='300px' alt='No Image'></img></a>") + "<br>")
-				.append("<br><span>Location Information " + (res.horizontalcoordrefsystem == null ? "" : "(" + res.horizontalcoordrefsystem + ")") + "</span><br>")
-				.append((res.latitude == null ? "" : "<span>Latitude: " + res.latitude + "</span><br>"))
-				.append((res.longitude == null ? "" : "<span>Longitude: " + res.longitude + "</span><br>"))
-				.append((res.county == null ? "" : "<span>County: " + res.county + "</span><br>"));
-			if(res.usgs_id != null && res.usgs_id.length > 0)
-				$("#location-content").append("<br /><span>USGS Well Number: <a href='http://nwis.waterdata.usgs.gov/nwis/gwlevels/?site_no=" + res.usgs_id + "' target='_blank'>" + res.usgs_id + "</a></span><br>");
-			/* else
-				$("#location-content").append("<span>USGS Well Number: NA</span><br>"); */
-				$("#location-content").append((res.wrnum == null ? "" : "<br><span>Water Rights Number: " + res.wrnum + "</span><br>"))
-				.append((res.win == null ? "" : "<br><span>WIN: <a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
-				.append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure + "</span><br>"))
-				.append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
-				.append("<br><span id='si'>Screened Interval</span><br>")
-				.append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
-				.append((res.aquifername == null ? "" : "<br><span>Screened Unit: " +  getLocalAquifer(res.aquifername) + "</span><br>"))
-				/* .append("<span>Barometric Efficiency: " + (res.BaroEfficiency == null ? "" : res.BaroEfficiency) + "</span><br>")
-				.append("<span>Started: " + (res.BaroEfficiencyStart == null ? "" : new Date(res.BaroEfficiencyStart).toLocaleDateString()) + "</span><br><br>") */
-				.append((res.notes == null ? "" : "<br><span>Notes: " + res.notes + "</span>"))
-				.append("<br><span>Note Log<div id='locNotes1' style='overflow:auto;max-height:300px;'></div>");
-				
-			if(res.linklithologiclog != null)
-				$("#location-content").append("<span><a href='" + res.linklithologiclog + "' target='_blank'>Lithologic Log</a></span>");
-			
-			if(res.linkgeophysicallog != null)
-				$("#location-content").append("<br><span><a href='" + res.linkgeophysicallog + "' target='_blank'>Geophysical Log</a></span>");
-			
-			if(res.linkdevelopmentlog != null)
-				$("#location-content").append("<br><span><a href='" + res.linkdevelopmentlog + "' target='_blank'>Development Log</a></span>");
-			
-			
-			//var qtLith = new QueryTask(msLith);
-			var qLith = new Query();
-			
-			var statMin = new StatisticDefinition();
-			statMin.statisticType = "min";
-			statMin.onStatisticField = "lithologydepthfrom";
-			statMin.outStatisticFieldName = "minFrom";
-			
-			var statMax = new StatisticDefinition();
-			statMax.statisticType = "max";
-			statMax.onStatisticField = "lithologydepthto";
-			statMax.outStatisticFieldName = "maxTo";
-			
-			var statUnit = new StatisticDefinition();
-			statUnit.statisticType = "max";
-			statUnit.onStatisticField = "lithologydepthfromunit";
-			statUnit.outStatisticFieldName = "maxUnit";
-			
-			qLith.returnGeometry = false;
-			qLith.outFields = ["objectid"];
-			qLith.where = "siteno = '" + res.locationid + "'";
-			qLith.outStatistics = [ statMin, statMax, statUnit ];
-			
-			//qtLith.execute(qLith, handleLithResults, handleLithErrors);
-			query.executeQueryJSON(msLith,qLith).then(handleLithResults);
-
-			/* function handleLithErrors(error)
-			{
-				console.log("There was an error in the first arcgis server query 'lithresults'. See next line for details.");
-				console.log(error);
-			} */
-			
-			$("#graph-content").hide();
-			$("#graph-content-flow").hide();
-			$("#graph-message").hide();
-			$("#graph-content-additional").hide();
-			$("#csv-download").show();
-
-			console.log("alt location id = "+ res.altlocationid);
-			
-			if(res.altlocationid == null)
-			{
-				$("#graph-message").show();
-				$("#divSpinner").hide();
-				$("#csv-download").hide();
-				return;
-			}
-			
-			//let qtNotes = new QueryTask(msNotes);
-			let qNotes = new Query();
-			qNotes.outFields = ["*"];
-			qNotes.returnGeometry = false;
-			qNotes.orderByFields = ["datetime DESC"];
-			if(res.altlocationid != null){
-				qNotes.where = "typeid = " + res.altlocationid + " AND type = 'L'";
-			} else {
-				qNotes.where = "1=2";
-			}
-			//qtNotes.execute(qNotes, handleNotesResults, handleNotesErrors);
-			query.executeQueryJSON(msNotes,qNotes).then(handleNotesResults);
-			
-			var dataTable = res.locationtype;
-			
-			if(dataTable.toLowerCase() == "spring")
-			{
-				$(".divFlow").show();
-				flowIDs = res.altlocationid;
-				getFlowData(res.altlocationid + "", "daily", true);
-			}
-			else // if its a well
-			{
-				console.log("starting spring qGraph query task");
-				$(".divFlow").hide();
-				//qtGraph = new QueryTask(msReadings);
-				qGraph = new Query();
-				qGraph.returnGeometry = false;
-				qGraph.where = "locationid = " + res.altlocationid;
-				qGraph.outFields = ["readingdate, waterelevation"];
-				qGraph.orderByFields = ["readingdate"];
-				//qtGraph.execute(qGraph, handleGraphResults, handleGraphError);
-				query.executeQueryJSON(msReadings,qGraph).then(handleGraphResults);
-
-				//console.log(res);   // test with CHWNAV  CHWENT
-				//if(res.altlocationid == 138 || res.altlocationid == 139  || res.altlocationid == 140  || res.altlocationid == 141)
-				// change this to look for 'hascond' in msLocation table
-				if (res.hascond == 1)  // this must be manually updated every time condcutivity is added to a site, only 4 exist
-				{
-					console.log("ONE of Lucy's data points!");
-					qGraph = new Query();
-					qGraph.returnGeometry = false;
-					qGraph.where = "locationid = " + res.altlocationid;
-					qGraph.outFields = ["readingdate, conductivity"];
-					qGraph.orderByFields = ["readingdate"];
-					query.executeQueryJSON(msReadings,qGraph).then(additionalGraphResults);
-				}
-
-			}
 
 
-		}
+		function handleLocResults(results) {
+    console.log(results);
+    if (chart != null) {
+        chart.clear();
+        chart = null;
+    }
+    $("#divSpinner").show();
+    var res = results.features;
+    gl.loc = res;
+    gl.locs = res;
+    res = res[0];
+
+    $("#pnlTitle").empty();
+    $("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
+    $("#location-content").empty();
+    $("#site-location-content").empty();
+    gl.locIDs = res.objectid;
+    console.log(res.imagepath);
+
+    const imagePath = `images/${res.imagepath}`;
+    const imageRef = window.firebaseRef(window.firebaseStorage, imagePath);
+
+    window.firebaseGetDownloadURL(imageRef)
+        .then((url) => {
+            console.log('Image URL:', url);
+            appendLocationContent(res, url);
+        })
+        .catch((error) => {
+            console.error('Error getting download URL:', error);
+            const noImageUrl = "no-image-available-new.jpg";
+            appendLocationContent(res, noImageUrl);
+        })
+        .finally(() => {
+            continueLocationProcessing(res);
+        });
+}
+
+function appendLocationContent(res, imageUrl) {
+    $("#location-content")
+        .append((res.locationid == null ? "" : "<span>ID: " + res.locationid + "</span><br>"))
+        .append((res.locationdesc == null ? "" : "<br><span>Description: " + res.locationdesc + "</span><br>"))
+        .append(`<a href='${imageUrl}' target='_blank'><img src='${imageUrl}' width='300px' alt='Location Image'></img></a><br>`)
+        .append("<br><span>Location Information " + (res.horizontalcoordrefsystem == null ? "" : "(" + res.horizontalcoordrefsystem + ")") + "</span><br>")
+        .append((res.latitude == null ? "" : "<span>Latitude: " + res.latitude + "</span><br>"))
+        .append((res.longitude == null ? "" : "<span>Longitude: " + res.longitude + "</span><br>"))
+        .append((res.county == null ? "" : "<span>County: " + res.county + "</span><br>"));
+
+
+    if (res.usgs_id != null && res.usgs_id.length > 0)
+        $("#location-content").append("<br /><span>USGS Well Number: <a href='http://nwis.waterdata.usgs.gov/nwis/gwlevels/?site_no=" + res.usgs_id + "' target='_blank'>" + res.usgs_id + "</a></span><br>");
+
+    $("#location-content")
+        .append((res.wrnum == null ? "" : "<br><span>Water Rights Number: " + res.wrnum + "</span><br>"))
+        .append((res.win == null ? "" : "<br><span>WIN: <a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
+        .append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure + "</span><br>"))
+        .append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
+        .append("<br><span id='si'>Screened Interval</span><br>")
+        .append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
+        .append((res.aquifername == null ? "" : "<br><span>Screened Unit: " + getLocalAquifer(res.aquifername) + "</span><br>"))
+        .append((res.notes == null ? "" : "<br><span>Notes: " + res.notes + "</span>"))
+        .append("<br><span>Note Log<div id='locNotes1' style='overflow:auto;max-height:300px;'></div>");
+
+    if (res.linklithologiclog != null)
+        $("#location-content").append("<span><a href='" + res.linklithologiclog + "' target='_blank'>Lithologic Log</a></span>");
+
+    if (res.linkgeophysicallog != null)
+        $("#location-content").append("<br><span><a href='" + res.linkgeophysicallog + "' target='_blank'>Geophysical Log</a></span>");
+
+    if (res.linkdevelopmentlog != null)
+        $("#location-content").append("<br><span><a href='" + res.linkdevelopmentlog + "' target='_blank'>Development Log</a></span>");
+}
+
+function continueLocationProcessing(res) {
+    var qLith = new Query();
+    
+    var statMin = new StatisticDefinition();
+    statMin.statisticType = "min";
+    statMin.onStatisticField = "lithologydepthfrom";
+    statMin.outStatisticFieldName = "minFrom";
+    
+    var statMax = new StatisticDefinition();
+    statMax.statisticType = "max";
+    statMax.onStatisticField = "lithologydepthto";
+    statMax.outStatisticFieldName = "maxTo";
+    
+    var statUnit = new StatisticDefinition();
+    statUnit.statisticType = "max";
+    statUnit.onStatisticField = "lithologydepthfromunit";
+    statUnit.outStatisticFieldName = "maxUnit";
+    
+    qLith.returnGeometry = false;
+    qLith.outFields = ["objectid"];
+    qLith.where = "siteno = '" + res.locationid + "'";
+    qLith.outStatistics = [statMin, statMax, statUnit];
+    
+    query.executeQueryJSON(msLith, qLith).then(handleLithResults);
+
+    $("#graph-content").hide();
+    $("#graph-content-flow").hide();
+    $("#graph-message").hide();
+    $("#graph-content-additional").hide();
+    $("#csv-download").show();
+
+    console.log("alt location id = " + res.altlocationid);
+
+    if (res.altlocationid == null) {
+        $("#graph-message").show();
+        $("#divSpinner").hide();
+        $("#csv-download").hide();
+        return;
+    }
+
+    let qNotes = new Query();
+    qNotes.outFields = ["*"];
+    qNotes.returnGeometry = false;
+    qNotes.orderByFields = ["datetime DESC"];
+    if (res.altlocationid != null) {
+        qNotes.where = "typeid = " + res.altlocationid + " AND type = 'L'";
+    } else {
+        qNotes.where = "1=2";
+    }
+    query.executeQueryJSON(msNotes, qNotes).then(handleNotesResults);
+
+    var dataTable = res.locationtype;
+
+    if (dataTable.toLowerCase() == "spring") {
+        $(".divFlow").show();
+        flowIDs = res.altlocationid;
+        getFlowData(res.altlocationid + "", "daily", true);
+    } else {
+        console.log("starting spring qGraph query task");
+        $(".divFlow").hide();
+        qGraph = new Query();
+        qGraph.returnGeometry = false;
+        qGraph.where = "locationid = " + res.altlocationid;
+        qGraph.outFields = ["readingdate, waterelevation"];
+        qGraph.orderByFields = ["readingdate"];
+        query.executeQueryJSON(msReadings, qGraph).then(handleGraphResults);
+
+        if (res.hascond == 1) {
+            console.log("ONE of Lucy's data points!");
+            qGraph = new Query();
+            qGraph.returnGeometry = false;
+            qGraph.where = "locationid = " + res.altlocationid;
+            qGraph.outFields = ["readingdate, conductivity"];
+            qGraph.orderByFields = ["readingdate"];
+            query.executeQueryJSON(msReadings, qGraph).then(additionalGraphResults);
+        }
+    }
+}
 		
 		/* function handleLocError(error)
 		{
@@ -2941,9 +2931,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </calcite-panel>
 	
 
+
 	<script type="module">
 		// Import the functions you need from the SDKs you need
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+		import { getStorage, ref, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js';
 		// TODO: Add SDKs for Firebase products that you want to use
 		// https://firebase.google.com/docs/web/setup#available-libraries
 	  
@@ -2959,6 +2951,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 	  
 		// Initialize Firebase
 		const app = initializeApp(firebaseConfig);
+		const storage = getStorage(app);
+
+		  // Make functions globally available
+		  window.firebaseStorage = storage;
+  window.firebaseRef = ref;
+  window.firebaseGetDownloadURL = getDownloadURL;
 	  </script>
 
 
