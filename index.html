@@ -292,8 +292,8 @@ require([
 
 	const msCasing = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/0";
 	const msScreen = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/1";
-	const msLith = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/2";
-	const msSite = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/3";
+	const msLith = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/2"; //----------------
+	const msSite = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/3"; //----------------
 	//const msLocation = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/4";
 	//https://ugs-geoserver-prod-flbcoqv7oa-uc.a.run.app/geoserver/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=Groundwater%3Augs_ngwmn_monitoring_locations&OUTPUTFORMAT=json&SRSNAME=EPSG%3A26912&STARTINDEX=0&COUNT=3000
 	const msLocation = "https://ugs-geoserver-prod-flbcoqv7oa-uc.a.run.app/geoserver/wfs";
@@ -301,15 +301,15 @@ require([
 	const msPhyChem = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/6";
 	const msStates = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/7";
 	const msCounties = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/8";
-	const msLocalAquifer = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/9";
+	const msLocalAquifer = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/9"; //-------------  ugs_ngwmn_local_aquifer not spatial will  need a postgrest call
 	const msChars = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/10";
 	const msRAM = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/11";
-	const msReadings = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/12";
+	const msReadings = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/12"; //----------- ugs_gw_readings not spatial will  need a postgrest call
 	const msFlow = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/13";
-	const msPSW = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/14";
-	const msP2SW = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/15";
-	const msDataFiles = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/16";
-	const msNotes = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/17";
+	const msPSW = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/14"; //-------------   ugs_gw_project not spatial will  need a postgrest call
+	const msP2SW = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/15"; //-------------   UGS_GW_Project_Sites_Wells
+	const msDataFiles = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/16"; //----------   UGS_GW_Loc_Data_Table
+	const msNotes = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/17"; //-------------   UGS_GW_Notes
 
 	
 
