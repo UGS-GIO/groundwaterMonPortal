@@ -406,7 +406,7 @@ require([
 	// use trigger action to open details pane (make only fire on mobile?)
 	view.popup.on("trigger-action", function(event) {
 		// Execute popup action if clicked		if (event.action.id === "site-details") {
-			console.log(event.action.id);
+			console.log(event);
 			var slayer = view.popup.viewModel.selectedFeature.sourceLayer.id;
 			console.log(slayer);
 			if (slayer == "well-spring-locations"){
@@ -2038,17 +2038,25 @@ const qLith = {
 		}
 		
 		
-		function loadSiteLocations(site)
-		{
-			console.log(site);
-			let qLocs = new Query();
-			qLocs.returnGeometry = false;
-			qLocs.outFields = ["*"];
-			qLocs.where = "siteid = '" + site + "'";
-			
-			//qtLocs.execute(qLocs, handleLocsResults, handleLocsError);
-			query.executeQueryJSON(msLocation,qLocs).then(handleLocsResults);
-		}
+async function loadSiteLocations(site) {
+  console.log(site);
+  
+  const msLocation = "https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations";
+  
+  try {
+    const response = await fetch(`${msLocation}?select=*&siteid=eq.${encodeURIComponent(site)}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    handleLocsResults({ features: data });
+  } catch (error) {
+    console.error("Error in loadSiteLocations:", error);
+
+  }
+}
 		
 
 		function imageExists(image_url){
@@ -2175,8 +2183,26 @@ const qLith = {
 			qLith.groupByFieldsForStatistics = ["siteno"];
 
 			console.log(qLith);			
-			//qtLith.execute(qLith, handleLithResults, handleLithErrors2);
-			query.executeQueryJSON(msLith,qLith).then(handleLithResults);
+fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_lithology?' + new URLSearchParams({
+        select: 'minfrom:lithologydepthfrom.min(),maxto:lithologydepthto.max(),maxunit:lithologydepthfromunit.max()',
+        siteno: `in.(${locIDs})`,
+        order: 'siteno'
+    }), {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(handleLithResults)
+    .catch(error => {
+        console.error('Error fetching lithology data:', error);
+    });
 
 			/* function handleLithErrors2(error)
 			{
@@ -2212,10 +2238,66 @@ const qLith = {
 			$("#divSpinner").show();
 			console.log("flow location ids = "+flowLocIDs);
 			//promises = new all([qtGraph.execute(qGraph, handleMultiGraphResults, handleMultiGraphError), getFlowData(flowLocIDs, "daily", false),
-			promises = new all([query.executeQueryJSON(msReadings,qGraph).then(handleMultiGraphResults), getFlowData(flowLocIDs, "daily", false)]);
+fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes?' + new URLSearchParams({
+    select: '*',
+    order: 'datetime.desc',
+    typeid: `in.(${locIDs})`,
+    type: 'eq.L'
+}), {
+    method: 'GET',
+    headers: {
+        'Accept': 'application/json',
+    }
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+})
+.then(data => {
+    // Transform the data to match the expected format
+    const transformedData = {
+        features: data.map(item => ({
+            attributes: item
+        }))
+    };
+    handleMultiNotesResults(transformedData);
+})
+.catch(error => {
+    console.error('Error fetching notes:', error);
+});
 			promises.then(graphingDone);
 			//qtNotes.execute(qNotes, handleMultiNotesResults, handleNotesErrors)]);
-			query.executeQueryJSON(msNotes,qNotes).then(handleMultiNotesResults);
+			fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes?' + new URLSearchParams({
+    select: '*',
+    order: 'datetime.desc',
+    typeid: `in.(${locIDs})`,
+    type: 'eq.L'
+}), {
+    method: 'GET',
+    headers: {
+        'Accept': 'application/json',
+    }
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+})
+.then(data => {
+    // Transform the data to match the expected format
+    const transformedData = {
+        features: data.map(item => ({
+            attributes: item
+        }))
+    };
+    handleMultiNotesResults(transformedData);
+})
+.catch(error => {
+    console.error('Error fetching notes:', error);
+});
 			//$('.cd-panel').addClass('is-visible');
 			resultsExpand.expand();
 		}
@@ -2492,22 +2574,59 @@ async function doSearch() {
 		
 		function getSitesAndLocs(siteIDs, locIDs)
 		{
-			//let qtSites = new QueryTask(msSite);
-			let qSites = new Query();
-			qSites.returnGeometry = false;
-			qSites.outFields = ["*"];
-			qSites.where = (siteIDs.length > 0 ? "objectid IN (" + siteIDs + ")" : "1=2");
-	
-			//let qtLocs = new QueryTask(msLocation);
-			let qLocs = new Query();
-			qLocs.returnGeometry = false;
-			qLocs.outFields = ["*"];
-			qLocs.where = (locIDs.length > 0 ? "objectid IN (" + locIDs + ")" : "1=2");
-			
-			//promises = new all([qtSites.execute(qSites, null, handleqSiteError), qtLocs.execute(qLocs, null, handleqLocsError)]);
-			//promises.then(handleSiteLocSearch);
-			query.executeQueryJSON(msSite, qSites).then(handleSiteLocSearch);
-			query.executeQueryJSON(msLocation, qLocs).then(handleSiteLocSearch);
+			function getSitesAndLocs(siteIDs, locIDs) {
+    // Fetch sites data
+    fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_sites?' + new URLSearchParams({
+        select: '*',
+        objectid: siteIDs.length > 0 ? `in.(${siteIDs})` : 'eq.null'
+    }), {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(sitesData => {
+        // Transform sites data
+        const transformedSitesData = {
+            features: sitesData.map(site => ({ attributes: site }))
+        };
+
+        // Fetch locations data
+        return fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations?' + new URLSearchParams({
+            select: '*',
+            objectid: locIDs.length > 0 ? `in.(${locIDs})` : 'eq.null'
+        }), {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(locsData => {
+            // Transform locations data
+            const transformedLocsData = {
+                features: locsData.map(loc => ({ attributes: loc }))
+            };
+
+            // Call handleSiteLocSearch with both transformed datasets
+            handleSiteLocSearch([transformedSitesData, transformedLocsData]);
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching sites and locations data:', error);
+    });
+}
 		}
 		
 		function handleSiteLocSearch(results) {
