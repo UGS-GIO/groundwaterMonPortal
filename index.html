@@ -406,12 +406,11 @@ require([
 	// use trigger action to open details pane (make only fire on mobile?)
 	view.popup.on("trigger-action", function(event) {
 		// Execute popup action if clicked		if (event.action.id === "site-details") {
-			console.log(event);
 			var slayer = view.popup.viewModel.selectedFeature.sourceLayer.id;
 			console.log(slayer);
 			if (slayer == "well-spring-locations"){
 				console.log('fire1');
-				var sid = view.popup.viewModel.selectedFeature.attributes.objectid;
+				var sid = view.popup.viewModel.selectedFeature.attributes.__esri_wfs_id__;
 				LoadLocationData(sid);
 				resultsExpand.expand();
 			} else if (slayer == "waterareas"){
