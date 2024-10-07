@@ -833,31 +833,28 @@ $("#btnDownloadTable").click(function() {
 
 		// on load get options for the advanced search combos.
 		// but why not just hard code these in?
-		function getCombos()
-		{
-			console.log("start getting options for 'select location type combo'");
-			let qtProj = new QueryTask(msPSW);
-			let qProj = new Query();
-				qProj.returnGeometry = false;
-				qProj.outFields = ["*"];
-				qProj.where = "1=1";
-			
-			let qtDataFiles = new QueryTask(msDataFiles);
-			let qDataFiles = new Query();
-				qDataFiles.returnGeometry = false;
-				qDataFiles.outFields = ["*"];
-				qDataFiles.where = "1=1";
+async function getCombos() {
+    console.log("Start getting options for 'select location type combo'");
+    
+    try {
+        const [projData, dataFilesData, laData] = await Promise.all([
+            fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_project?select=*')
+                .then(response => response.json()),
+            fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_loc_data_table?select=*')
+                .then(response => response.json()),
+            fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_local_aquifer?select=code,aquifername&order=code')
+                .then(response => response.json())
+        ]);
 
-			let qtLA = new QueryTask(msLocalAquifer);
-			let qLA = new Query();
-				qLA.returnGeometry = false;
-				qLA.outFields = ["code, aquifername"];
-				qLA.orderByFields = ["code"];
-				qLA.where = "1=1";
-			
-			promises = new all([qtProj.execute(qProj, null), qtDataFiles.execute(qDataFiles, null), qtLA.execute(qLA, null)]);
-			promises.then(handleComboResults);
-		}
+        handleComboResults([
+            { features: projData.map(item => ({ attributes: item })) },
+            { features: dataFilesData.map(item => ({ attributes: item })) },
+            { features: laData.map(item => ({ attributes: item })) }
+        ]);
+    } catch (error) {
+        console.error("Error fetching combo data:", error);
+    }
+}
 		
 		function handleComboResults(results)
 		{
@@ -879,7 +876,7 @@ $("#btnDownloadTable").click(function() {
 			projectSelect.id = "projectSelect";
 
 			projectSelect.add(blankOpt);
-			consol.log(res);
+			console.log(res);
 			for(var i = 0; i < res.length; i++)
 			{
 				var option = document.createElement("option");
@@ -1195,7 +1192,7 @@ async function LoadLocationData(locID) {
 		// whats the dif between this and handleLocsResults?
 
 
-		function handleLocResults(results) {
+function handleLocResults(results) {
     console.log("handleLocResults", results);
     if (chart != null) {
         chart.clear();
@@ -2096,7 +2093,7 @@ async function loadSiteLocations(site) {
 		}
 
 		// populates the primary well/spring information on the flyout pane
-		// whats the dif between this and handleLocResults?
+		// whats the dif between this and handleLocResults?   <-----------------------------great question! JH
 		function handleLocsResults(results)
 		{
 			$("#divSpinner").show();
