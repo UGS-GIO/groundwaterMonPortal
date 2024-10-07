@@ -411,6 +411,7 @@ require([
 			if (slayer == "well-spring-locations"){
 				console.log('fire1');
 				var sid = view.popup.viewModel.selectedFeature.attributes.__esri_wfs_id__;
+				console.log(sid);
 				LoadLocationData(sid);
 				resultsExpand.expand();
 			} else if (slayer == "waterareas"){
@@ -859,6 +860,7 @@ $("#btnDownloadTable").click(function() {
 			projectSelect.id = "projectSelect";
 
 			projectSelect.add(blankOpt);
+			consol.log(res);
 			for(var i = 0; i < res.length; i++)
 			{
 				var option = document.createElement("option");
@@ -1118,13 +1120,18 @@ function handleNotesResults(results) {
 			console.log("Notes Error: ", error);
 		} */
 		
+async function LoadLocationData(locID) {
+    console.log("Original locID:", locID);
+    
+    // Extract just the numeric part
+    const numericID = locID.split('.').pop();
+    
+    console.log("Numeric locID:", numericID);
 
-		async function LoadLocationData(locID) {
-			console.log(locID);
     const endpoint = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
     
     try {
-        const response = await fetch(`${endpoint}?objectid=eq.${locID}`, {
+        const response = await fetch(`${endpoint}?objectid=eq.${numericID}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -1138,7 +1145,7 @@ function handleNotesResults(results) {
         const data = await response.json();
         
         if (data.length === 0) {
-            console.log(`No location found with objectid: ${locID}`);
+            console.log(`No location found with objectid: ${numericID}`);
             return;
         }
 
@@ -1170,7 +1177,7 @@ function handleNotesResults(results) {
 
 
 		function handleLocResults(results) {
-    console.log(results);
+    console.log("handleLocResults", results);
     if (chart != null) {
         chart.clear();
         chart = null;
@@ -1180,6 +1187,7 @@ function handleNotesResults(results) {
     gl.loc = res;
     gl.locs = res;
     res = res[0];
+	console.log(res);
 
     $("#pnlTitle").empty();
     $("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
@@ -1972,7 +1980,9 @@ const qLith = {
 		
 		// get sites to put in results
 		function handleSiteResults(results)
+
 		{
+			console.log(results);
 			var res = results[0].features;
 			gl.site = res;
 			res = res[0].attributes;
