@@ -313,7 +313,23 @@ require([
 
 	
 
-
+	var areaLabel = {
+		labelExpressionInfo: { expression: "$feature.name" },
+		labelPlacement: "above-right",
+		maxScale: 0,
+  		minScale: 25000000,
+		symbol: {
+			type: "text",  		// autocasts as new TextSymbol()
+			color: "black",
+			//haloSize: 1,
+			//haloColor: "white"
+			font: {  		
+				family: "Ubuntu Mono",
+				size: 5,
+				weight: "normal"
+				}
+		}
+	};
 
 	// set popup action to open details pane.   see view.popup.on("trigger-action") for function
 	var getDetailsAction = {
@@ -339,7 +355,10 @@ require([
 		title:"sites",
 		outFields: ["*"],
 		//displayOnPan: false,
-		popupTemplate: areastemplate,
+		//popupTemplate: areastemplate,
+		labelsVisible: true, 
+		labelingInfo: [areaLabel],
+		popupEnabled: false,
 		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))",
 		opacity: 0.3
 		//visible: true
