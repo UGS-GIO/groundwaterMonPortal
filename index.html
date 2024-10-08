@@ -1364,7 +1364,11 @@ const qLith = {
 
 
 		 //New poostgrest call
-		 function getFlowData(id, type, hideSpin) {
+function getFlowData(id, type, hideSpin) {
+	$("#graph-content").empty().hide();
+	$("#graph-content-flow").empty().hide();
+	$("#graph-content-additional").empty().hide();
+
     if (!id) {
         console.log("There was no flow well id. This is probably a well. Aborting get_flow_data.");
         return;
@@ -1649,9 +1653,13 @@ const qLith = {
 		}
 		
 		// graph wells?
-		function handleGraphResults(results) {
+function handleGraphResults(results) {
     console.log("Starting handleGraphResults function - water elevation am chart FOR WELLS");
     console.log("Input results:", results);
+
+$("#graph-content").empty().hide();
+$("#graph-content-flow").empty().hide();
+$("#graph-content-additional").empty().hide();
     
     if (!results || results.length === 0) {
         console.log('No data to graph, hiding elements');
@@ -1778,6 +1786,11 @@ const qLith = {
     chartConfig.categoryField = "date";
 
     console.log("Final chart configuration:", chartConfig);
+
+if (chart) {
+  chart.clear();
+  chart.dispose();
+}
 
     try {
         var chart = AmCharts.makeChart("graph-content", chartConfig);
