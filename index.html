@@ -576,16 +576,24 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
 
   console.log('Initial wellIds:', wellIds);
 
-  // Ensure wellIds is an array
-  if (!Array.isArray(wellIds)) {
-    wellIds = [wellIds];
+  // Ensure wellIds is an array, handling different input types
+  let wellIdArray;
+  if (Array.isArray(wellIds)) {
+    wellIdArray = wellIds;
+  } else if (typeof wellIds === 'string') {
+    wellIdArray = wellIds.split(',').map(id => id.trim());
+  } else if (typeof wellIds === 'number') {
+    wellIdArray = [wellIds];
+  } else {
+    throw new Error('Invalid wellIds format');
   }
-  console.log('Processed wellIds:', wellIds);
+
+  console.log('Processed wellIds:', wellIdArray);
 
   // Create promises for each well ID
-  const promises = wellIds.map(wellId => {
+  const promises = wellIdArray.map(wellId => {
     // Fetch the altlocationid for the given objectid using PostgREST
-    return fetch(`${postgrestUrl}?objectid=eq.${wellId}&select=altlocationid`, {
+    return fetch(`${postgrestUrl}?objectid=eq.${wellId}&select=altlocationid,locationname`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -595,7 +603,9 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
     .then(data => {
       if (data && data.length > 0) {
         const altlocationid = data[0].altlocationid;
+        const locationname = data[0].locationname;
         console.log('Processing wellId:', wellId, 'altlocationid:', altlocationid);
+        
         const params = new URLSearchParams({
           p_well_id: altlocationid.toString(),
           p_type: dataType,
@@ -604,6 +614,7 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
         });
         const url = `${baseUrl}?${params}`;
         console.log('Fetch URL:', url);
+        
         return fetch(url, {
           method: 'GET',
           headers: {
@@ -620,7 +631,45 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
         })
         .then(data => {
           console.log('Data received for wellId:', wellId, 'altlocationid:', altlocationid, data);
-          return data.map(row => row.row_data).join('\n');
+          
+          let csvContent = '';
+          
+          // Split data into metadata and readings
+          const metadata = data.filter(row => row.metadata_key !== null);
+          const readings = data.filter(row => row.metadata_key === null);
+          
+          // Create metadata section
+          csvContent += 'Metadata\n';
+          metadata.forEach(item => {
+            if (item.metadata_key && item.metadata_value) {
+              csvContent += `${item.metadata_key},${item.metadata_value}\n`;
+            }
+          });
+          
+          // Add blank line between metadata and readings
+          csvContent += '\n';
+          
+          // Create readings section if there are any readings
+          if (readings.length > 0) {
+            // Get all possible column names excluding null values
+            const columns = Object.keys(readings[0]).filter(key => 
+              key !== 'metadata_key' && key !== 'metadata_value'
+            );
+            
+            // Add headers
+            csvContent += columns.join(',') + '\n';
+            
+            // Add data rows
+            readings.forEach(reading => {
+              const rowValues = columns.map(col => {
+                const value = reading[col];
+                return value === null ? '' : value;
+              });
+              csvContent += rowValues.join(',') + '\n';
+            });
+          }
+          
+          return csvContent;
         });
       } else {
         throw new Error(`No altlocationid found for objectid: ${wellId}`);
@@ -631,10 +680,17 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
   // Wait for all promises to resolve
   return Promise.all(promises)
     .then(results => {
-      // Combine results from all wells
-      const csvContent = results.join('\n');
+      // Combine results from all wells, adding a separator between wells if needed
+      const csvContent = results.join('\n-------------------\n');
+      
+      // Only proceed if we have data
+      if (!csvContent.trim()) {
+        throw new Error('No data available for the selected criteria');
+      }
+
       // Create a Blob with the CSV content
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
       // Create a download link and trigger the download
       const link = document.createElement("a");
       if (link.download !== undefined) {
@@ -649,10 +705,9 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
     })
     .catch(error => {
       console.error('Error:', error);
-      alert('An error occurred while downloading the data. Please try again.');
+      alert('An error occurred while downloading the data: ' + error.message);
     });
 }
-
 // Event listener for the main download button
 $("#btnDownload").click(function() {
   if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
