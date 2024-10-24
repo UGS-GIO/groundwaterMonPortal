@@ -2775,26 +2775,50 @@ function getAllSitesAndLocs() {
 			console.log("There was an error: msg given was, "+ error);
 		} */
 		
-function handleqLocsResults(results) {
-			console.log("handleqLocsResults", results)
-  var res = results.features;
-  let locIDs = ""; // Declare locIDs here
-  for (var i = 0; i < res.length; i++) {
-    var attr = res[i];  // Changed from res[i].attributes to res[i]
-    locIDs += attr.objectid + ", ";
-  }
-  locIDs = locIDs.slice(0, -2);
-  console.log("site area id's: " + locIDs);
-  var slyr = map.findLayerById('waterareas');
-  var llyr = map.findLayerById('well-spring-locations');
-  if (locIDs.length > 0) {
-    llyr.definitionExpression = "objectid IN (" + locIDs + ")";
-    slyr.definitionExpression = "objectid IN (" + siteIDs + ")";  // Note: siteIDs needs to be defined elsewhere
-    loadComplaintTable(res, "loc", true);
-    toggleTableDivVisibility();
-  } else {
-    llyr.definitionExpression = "1=2";
-  }
+		function handleqLocsResults(results) {
+    console.log("handleqLocsResults", results);
+    var res = results.features;
+    let locIDs = ""; 
+    
+    var slyr = map.findLayerById('waterareas');
+    var llyr = map.findLayerById('well-spring-locations');
+    
+    if (!slyr || !llyr) {
+        console.error("Could not find one or more layers");
+        return;
+    }
+
+    // Build the locIDs string without spaces after commas
+    for (var i = 0; i < res.length; i++) {
+        var attr = res[i];
+        if (attr && attr.objectid) {
+            // Convert objectid to WFS format with groundwater namespace
+            locIDs += `groundwater.ugs_ngwmn_monitoring_locations.${attr.objectid}` + ",";
+        }
+    }
+    
+    // Remove trailing comma
+    locIDs = locIDs.slice(0, -1);
+    console.log("Location IDs: " + locIDs);
+
+    try {
+        if (locIDs.length > 0) {
+            // Use __esri_wfs_id__ for the WFS layer
+            llyr.definitionExpression = `__esri_wfs_id__ IN (${locIDs})`;
+            console.log("Setting location layer definition: ", llyr.definitionExpression);
+            
+            loadComplaintTable(res, "loc", true);
+            toggleTableDivVisibility();
+        } else {
+            console.log("No location IDs found, setting default definition");
+            llyr.definitionExpression = "1=2";
+        }
+    } catch (error) {
+        console.error("Error setting definition expressions:", error);
+    }
+	console.log("Layer fields:", llyr.fields);
+console.log("Location layer definition:", llyr.definitionExpression);
+console.log("Site layer definition:", slyr.definitionExpression);
 }
 		/* function handleqLocsError(error)
 		{
