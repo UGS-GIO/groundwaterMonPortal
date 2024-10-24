@@ -2627,6 +2627,7 @@ async function doSearch() {
 		
 		function handleP2SWResults(results)
 		{
+			console.log("handleP2SW", results)
 			var res = results.features;
 			for(var i = 0; i < res.length; i++)
 			{
@@ -2744,8 +2745,7 @@ function getAllSitesAndLocs() {
 
 		function handleqSiteResults(results)
 		{
-			console.log("you go");
-			console.log(results);
+			console.log("handleqSiteResults", results)
 			var res = results.features;
 			for(var i = 0; i < res.length; i++)
 			{
@@ -2775,8 +2775,8 @@ function getAllSitesAndLocs() {
 			console.log("There was an error: msg given was, "+ error);
 		} */
 		
-		function handleqLocsResults(results) {
-  console.log(results);
+function handleqLocsResults(results) {
+			console.log("handleqLocsResults", results)
   var res = results.features;
   let locIDs = ""; // Declare locIDs here
   for (var i = 0; i < res.length; i++) {
