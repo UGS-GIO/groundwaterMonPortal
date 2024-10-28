@@ -78,8 +78,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       #searchwin {
         display: block;
         position: absolute;
-        top: 160px;
-        left: 10px;
+        top: 10px;
+        left: 60px;
       }
 
       #infoDiv {
@@ -523,6 +523,7 @@ require([
           view: view,
 		  container: document.getElementById("locationSearch"),
           allPlaceholder: "Search for spring, well or site area",
+		  minSuggestCharacters: 2,
           includeDefaultSources: false,
           sources: [
             {
@@ -911,178 +912,179 @@ async function getCombos() {
     }
 }
 		
-		function handleComboResults(results)
-		{
-			console.log("loading combo box options");
-			var projects = results[0];
-			var dataFiles = results[1];
-			localAquifers = results[2];
-			
+function handleComboResults(results)
+{
+	console.log("loading combo box options");
+	var projects = results[0];
+	var dataFiles = results[1];
+	localAquifers = results[2];
 	
-			var res = results[0].features;
-			gl.proj = res;
 
-			var blankOpt = document.createElement("option");
-			blankOpt.text = "";
-			blankOpt.value = "";
-			var lkp;
-			
-			var projectSelect = document.createElement("select");
-			projectSelect.id = "projectSelect";
+	var res = results[0].features;
+	gl.proj = res;
 
-			projectSelect.add(blankOpt);
-			console.log(res);
-			for(var i = 0; i < res.length; i++)
-			{
-				var option = document.createElement("option");
-				option.text = res[i].attributes.name;
-				option.value = res[i].attributes.objectid;
-				projectSelect.add(option);
-			}
+	var blankOpt = document.createElement("option");
+	blankOpt.text = "";
+	blankOpt.value = "";
+	var lkp;
+	
+	var projectSelect = document.createElement("select");
+	projectSelect.id = "projectSelect";
 
-			document.getElementById("projectSelectAlt").appendChild(projectSelect);
-			$("#projectSelect").select2({
-				placeholder: "Select Project",
-				width: '100%',
-				minimumResultsForSearch: Infinity,
-				allowClear: true
-			});
+	projectSelect.add(blankOpt);
+	console.log(res);
+	for(var i = 0; i < res.length; i++)
+	{
+		var option = document.createElement("option");
+		option.text = res[i].attributes.name;
+		option.value = res[i].attributes.objectid;
+		projectSelect.add(option);
+	}
+
+	document.getElementById("projectSelectAlt").appendChild(projectSelect);
+	$("#projectSelect").select2({
+		placeholder: "Select Project",
+		width: '100%',
+		minimumResultsForSearch: Infinity,
+		allowClear: true
+	});
 
 
-			var locationTypeSelect = document.createElement("select");
-			locationTypeSelect.id = "locationTypeSelect";
-			
-			res = results[1].features;
-			gl.DF = res;
+	var locationTypeSelect = document.createElement("select");
+	locationTypeSelect.id = "locationTypeSelect";
+	
+	res = results[1].features;
+	gl.DF = res;
 
-			locationTypeSelect.add(blankOpt);
-			for(var i = 0; i < res.length; i++)
-			{
-				var option = document.createElement("option");
-				option.text = res[i].attributes.dropdownvalue;
-				option.value = res[i].attributes.datatable;
-				locationTypeSelect.add(option);
-			}
+	locationTypeSelect.add(blankOpt);
+	for(var i = 0; i < res.length; i++)
+	{
+		var option = document.createElement("option");
+		option.text = res[i].attributes.dropdownvalue;
+		option.value = res[i].attributes.datatable;
+		locationTypeSelect.add(option);
+	}
 
-			// does this do anything?  try commenting out
-			document.getElementById("locationTypeSelectAlt").appendChild(locationTypeSelect);
-			$("#locationTypeSelect").select2({
-				placeholder: "Select Location Type",
-				width: '100%',
-				minimumResultsForSearch: Infinity,
-				allowClear: true
-			});
+	// does this do anything?  try commenting out
+	document.getElementById("locationTypeSelectAlt").appendChild(locationTypeSelect);
+	$("#locationTypeSelect").select2({
+		placeholder: "Select Location Type",
+		width: '100%',
+		minimumResultsForSearch: Infinity,
+		allowClear: true
+	});
 
-			// when user changes/selects location type
-			$("#locationTypeSelect").on('change', function(n) {
-  console.log("select the site location");
-  console.log(n.target.value);
-  $("#locationName").val("");
-  $("#siteName").val("");
-  $('#projectSelect').val('').prop('selected', true);
-  $("#projectSelect").trigger('change.select2');
-  
-  // filter for drop down values, NEEDED DISPLAY = 1 ADDED TO THE SQL STATEMNT
-  let sql;
-  switch(n.target.value) {
-    case "flow":
-      sql = "LocationType = 'Spring' AND display = '1'";
-      break;
-    case "reading":
-      sql = "LocationType = 'Well' AND display = '1'";
-      break;
-    case "piez":
-      sql = "WellType = 'Piezometer' AND display = '1'";
-      break;
-    default:
-      sql = "'display' = '1'";  // Default case to show all displayed items
-  }
-  
-  var llyr = map.findLayerById('well-spring-locations');
-  llyr.definitionExpression = sql;
-
-  /*
-  const query = wellspringlocations.createQuery();
-  query.outFields = ["*"];
-  wellspringlocations.queryFeatures(query).then((results) => {
-    console.log(result.features); // print the features to the console
-  });
-  */
-});
-			$('#projectSelect').val('').prop('selected', true);
-			toggleFind();
+	// when user changes/selects location type
+	$("#locationTypeSelect").on('change', function(n) {
+		console.log("select the site location");
+		console.log(n.target.value);
+		$("#locationName").val("");
+		$("#siteName").val("");
+		$('#projectSelect').val('').prop('selected', true);
+		$("#projectSelect").trigger('change.select2');
+		
+		// filter for drop down values, NEEDED DISPLAY = 1 ADDED TO THE SQL STATEMNT
+		let sql;
+		switch(n.target.value) {
+			case "flow":
+			sql = "LocationType = 'Spring' AND display = '1'";
+			break;
+			case "reading":
+			sql = "LocationType = 'Well' AND display = '1'";
+			break;
+			case "piez":
+			sql = "WellType = 'Piezometer' AND display = '1'";
+			break;
+			//default:
+			//sql = "'display' = '1'";  // Default case to show all displayed items
 		}
 		
+		var llyr = map.findLayerById('well-spring-locations');
+		llyr.definitionExpression = sql;
 
-		// when user hits enter key in location box, do search
-		$('#locationName, #siteName').keypress(function(e){
-			if(e.which == 13){   //Enter key pressed
-				console.log("Enter key was pressed");
-				doSearch();
-			}
+		/*
+		const query = wellspringlocations.createQuery();
+		query.outFields = ["*"];
+		wellspringlocations.queryFeatures(query).then((results) => {
+			console.log(result.features); // print the features to the console
 		});
+		*/
 
-		// when user changes/selects project area or location type
-		// update the map without having to push search
-		$("#projectSelectAlt").on('change', function(n) {
-			console.log(n.target.value);
-			$("#locationName").val("");
-			$("#siteName").val("");
-			$('#locationTypeSelect').val('').prop('selected', true);
-			$("#locationTypeSelect").trigger('change.select2');   // what does this do?!!!
-			// add definitionexpression here
-			// use "AltLocationContext" instead of network name?
-			switch(n.target.value) {
-				case "1":
-					var sql = "WLNetworkName = 'Snake Valley'";
-				break;
-				case "2":
-					var sql = "WLNetworkName = 'Ogden Valley'";
-				break;
-				case "3":
-					var sql = "WLNetworkName = 'Courthouse Wash'";
-				break;
-				case 4:
-					var sql = "WLNetworkName = UGS-NGWMN";
-				break;
-				case "5":
-					var sql = "WLNetworkName = 'Snake Valley Wetlands'";
-				break;
-				case "6":
-					var sql = "WLNetworkName = 'Juab Valley'";
-				break;
-			} 
-			var llyr = map.findLayerById('well-spring-locations');
-			llyr.definitionExpression = sql;
-		});
-		//console.log(projectSelect);
+	});
+	$('#projectSelect').val('').prop('selected', true);
+	//toggleFind();
+}
+		
 
+	// when user hits enter key in location box, do search
+	$('#locationName, #siteName').keypress(function(e){
+		if(e.which == 13){   //Enter key pressed
+			doSearch();
+		}
+	});
 
-
+	// when user changes/selects project area or location type
+	// update the map without having to push search
+	$("#projectSelectAlt").on('change', function(n) {
+		console.log(n.target.value);
+		$("#locationName").val("");
+		$("#siteName").val("");
+		$('#locationTypeSelect').val('').prop('selected', true);
+		$("#locationTypeSelect").trigger('change.select2');   // what does this do?!!!
+		// use "AltLocationContext" instead of network name?
+		switch(n.target.value) {
+			case "1":
+				var sql = "WLNetworkName = 'Snake Valley'";
+			break;
+			case "2":
+				var sql = "WLNetworkName = 'Mills-Mona Wetlands'";
+			break;
+			case "3":
+				var sql = "WLNetworkName = 'Courthouse Wash'";
+			break;
+			case 4:
+				var sql = "WLNetworkName = UGS-NGWMN";
+			break;
+			case "5":
+				var sql = "WLNetworkName = 'Snake Valley Wetlands'";
+			break;
+			case "6":
+				var sql = "WLNetworkName = 'Juab Valley'";
+			break;
+		} 
+		var llyr = map.findLayerById('well-spring-locations');
+		// fixing this. lance
+		//llyr.definitionExpression = "siteid IN (-1,69)";
+		llyr.definitionExpression = sql;
+	});
+	//console.log(projectSelect);
 
 		
-		function getLocalAquifer(code)
+	function getLocalAquifer(code)
+	{
+		for(var i = 0; i < localAquifers.features.length; i++)
 		{
-			for(var i = 0; i < localAquifers.features.length; i++)
+			if(localAquifers.features[i].attributes.Code == code)
 			{
-				if(localAquifers.features[i].attributes.Code == code)
-				{
-					return localAquifers.features[i].attributes.Name;
-				}
+				return localAquifers.features[i].attributes.Name;
 			}
-			return "";
 		}
+		return "";
+	}
 		
 		
-		function handleLithResults(results) {
-    if (results.length === 0) return;
+	function handleLithResults(results) {
+		if (results.length === 0) return;
 
-    const res = results[0]; // There should only be one row
-    if (res.maxunit == null) $("#si").hide();
+		const res = results[0]; // There should only be one row
+		if (res.maxunit == null) $("#si").hide();
 
-    $("#si").append(` (${res.maxunit || ""}): ${res.minfrom || ""}-${res.maxto || ""}`);
-    resultsExpand.expand();
-}	
+		$("#si").append(` (${res.maxunit || ""}): ${res.minfrom || ""}-${res.maxto || ""}`);
+		resultsExpand.expand();
+	}	
+
+
+
 function handleNotesResults(results) {
     console.log('Notes results:', results); // Add this line for debugging
 
@@ -1196,7 +1198,6 @@ async function LoadLocationData(locID) {
     
     // Extract just the numeric part
     const numericID = locID.split('.').pop();
-    
     console.log("Numeric locID:", numericID);
 
     const endpoint = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
@@ -1266,7 +1267,7 @@ function handleLocResults(results) {
     $("#site-location-content").empty();
     gl.locIDs = res.objectid;
     console.log(res.imagepath);
-	res.imagepath = res.imagepath || "no-image-available-new.jpg";
+	res.imagepath = res.imagepath || "no-image-available-new.png";
 
     const imagePath = `images/${res.imagepath}`;
     const imageRef = window.firebaseRef(window.firebaseStorage, imagePath);
@@ -1278,7 +1279,7 @@ function handleLocResults(results) {
         })
         .catch((error) => {
             console.error('Error getting download URL:', error);
-            //const noImageUrl = "no-image-available-new.jpg";
+            //const noImageUrl = "no-image-available-new.png";
             appendLocationContent(res, noImageUrl);
         })
         .finally(() => {
@@ -2581,7 +2582,7 @@ fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes?' + new URLSe
 			$("#locationTypeSelect").trigger('change.select2');
 		});
 		
-		// when user hits the search button on advanced search
+// when user hits the search button on advanced search
 async function doSearch() {
   let locIDs = "";
   let siteIDs = "";
@@ -2743,38 +2744,38 @@ function getAllSitesAndLocs() {
 }
 
 
-		function handleqSiteResults(results)
+	function handleqSiteResults(results)
+	{
+		console.log("you go");
+		console.log(results);
+		var res = results.features;
+		for(var i = 0; i < res.length; i++)
 		{
-			console.log("you go");
-			console.log(results);
-			var res = results.features;
-			for(var i = 0; i < res.length; i++)
-			{
-				var attr = res[i].attributes;
-				siteIDs += attr.objectid + ", ";
-				gl.siteIDs = siteIDs;
-			}
-			siteIDs = siteIDs.slice(0, -2);
-			
-			var slyr = map.findLayerById('waterareas');
-			var llyr = map.findLayerById('well-spring-locations');
-			if(siteIDs.length > 0)
-			{
-				console.log(llyr);
-				slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
-				llyr.definitionExpression = "1=2";
-				loadComplaintTable(res, "site", true);
-				toggleTableDivVisibility();
-			}
-			else
-				console.log("no site areas matching query");
-				slyr.definitionExpression = "1=2";
+			var attr = res[i].attributes;
+			siteIDs += attr.objectid + ", ";
+			gl.siteIDs = siteIDs;
 		}
+		siteIDs = siteIDs.slice(0, -2);
 		
-		/* function handleqSiteError(error)
+		var slyr = map.findLayerById('waterareas');
+		var llyr = map.findLayerById('well-spring-locations');
+		if(siteIDs.length > 0)
 		{
-			console.log("There was an error: msg given was, "+ error);
-		} */
+			console.log(llyr);
+			slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
+			llyr.definitionExpression = "1=2";
+			loadComplaintTable(res, "site", true);
+			toggleTableDivVisibility();
+		}
+		else
+			console.log("no site areas matching query");
+			slyr.definitionExpression = "1=2";
+	}
+	
+	/* function handleqSiteError(error)
+	{
+		console.log("There was an error: msg given was, "+ error);
+	} */
 		
 		function handleqLocsResults(results) {
     console.log(results);
@@ -2928,9 +2929,11 @@ function getAllSitesAndLocs() {
 		// comment out?  not used now? (only referenced from row click above^)
 		function compPicked(evt)
 		{
+
 			var id = evt.target.parentElement.cells[0].textContent;
 			var action = evt.target.parentElement.cells[1].textContent;
 			resultsExpand.expand();  // open results pane
+			console.log('action: '+action);
 			
 			if(action == "l")
 				LoadLocationData(id);
