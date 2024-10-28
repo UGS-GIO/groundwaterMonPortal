@@ -414,6 +414,7 @@ require([
 		id: "well-spring-locations",
 		title: "Well & Spring Locations",
 		outFields: ["*"],
+		//definitionExpression: "fid = 'ugs_ngwmn_monitoring_locations.162'",
 		definitionExpression: "display = '1'",
 		popupTemplate: locationstemplate,
 		renderer: locationsRenderer,
@@ -2776,25 +2777,27 @@ function getAllSitesAndLocs() {
 		} */
 		
 		function handleqLocsResults(results) {
-  console.log(results);
-  var res = results.features;
-  let locIDs = ""; // Declare locIDs here
-  for (var i = 0; i < res.length; i++) {
-    var attr = res[i];  // Changed from res[i].attributes to res[i]
-    locIDs += attr.objectid + ", ";
-  }
-  locIDs = locIDs.slice(0, -2);
-  console.log("site area id's: " + locIDs);
-  var slyr = map.findLayerById('waterareas');
-  var llyr = map.findLayerById('well-spring-locations');
-  if (locIDs.length > 0) {
-    llyr.definitionExpression = "objectid IN (" + locIDs + ")";
-    slyr.definitionExpression = "objectid IN (" + siteIDs + ")";  // Note: siteIDs needs to be defined elsewhere
-    loadComplaintTable(res, "loc", true);
-    toggleTableDivVisibility();
-  } else {
-    llyr.definitionExpression = "1=2";
-  }
+    console.log(results);
+    var res = results.features;
+    
+    // Build expression using ugs_ngwmn_monitoring_locations.{id}
+    const quotedLocExpression = res.map(r => `__esri_wfs_id__='ugs_ngwmn_monitoring_locations.${r.objectid}'`).join(' OR ');
+    console.log("site area id's expression: " + quotedLocExpression);
+    
+    var slyr = map.findLayerById('waterareas');
+    var llyr = map.findLayerById('well-spring-locations');
+    
+    if (res.length > 0) {
+        llyr.definitionExpression = quotedLocExpression;
+        loadComplaintTable(res, "loc", true);
+        toggleTableDivVisibility();
+    } else {
+        llyr.definitionExpression = '1=2';
+    }
+    
+    console.log("Location layer definition:", llyr.definitionExpression);
+    console.log("Site layer definition:", slyr.definitionExpression);
+	console.log("layer", llyr);
 }
 		/* function handleqLocsError(error)
 		{
