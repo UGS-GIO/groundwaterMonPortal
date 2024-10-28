@@ -2617,8 +2617,8 @@ async function doSearch() {
     } else {
       var slyr = map.findLayerById('waterareas');
       var llyr = map.findLayerById('well-spring-locations');
-      llyr.definitionExpression = "1=1";
-      slyr.definitionExpression = "1=1";
+      llyr.definitionExpression = "display = '1'";
+      slyr.definitionExpression = "display = '1'";
       getAllSitesAndLocs();
     }
   } catch (error) {
@@ -2956,8 +2956,8 @@ function getAllSitesAndLocs() {
 			
 			var slyr = map.findLayerById('waterareas');
 			var llyr = map.findLayerById('well-spring-locations');
-			llyr.definitionExpression = "1=1";
-			slyr.definitionExpression = "1=1";
+			llyr.definitionExpression = "display = '1'";
+			slyr.definitionExpression = "display = '1'";
 			
 			dojo.empty(resultsDiv);
 			tableExpand.collapse();
