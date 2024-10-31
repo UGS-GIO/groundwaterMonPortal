@@ -1709,14 +1709,13 @@ function getFlowData(id, type, hideSpin) {
 			//console.log(chartData);
 		}
 		
-		// graph wells?
 function handleGraphResults(results) {
     console.log("Starting handleGraphResults function - water elevation am chart FOR WELLS");
     console.log("Input results:", results);
 
-$("#graph-content").empty().hide();
-$("#graph-content-flow").empty().hide();
-$("#graph-content-additional").empty().hide();
+    $("#graph-content").empty().hide();
+    $("#graph-content-flow").empty().hide();
+    $("#graph-content-additional").empty().hide();
     
     if (!results || results.length === 0) {
         console.log('No data to graph, hiding elements');
@@ -1728,6 +1727,50 @@ $("#graph-content-additional").empty().hide();
     var res = gl.loc[0];
     console.log("res object:", res);
     
+    // Process and aggregate the data by day
+    const dailyData = new Map();  // Fixed: Added 'new' keyword
+    let dataToProcess = Array.isArray(results) ? results : (results.features || []);
+    
+    console.log("Data to process:", dataToProcess);
+
+    // Create a simple object to store daily data
+    const dailyAggregation = {};
+    
+    dataToProcess.forEach(item => {
+        let attributes = item.attributes || item;
+        if (attributes.readingdate != null && attributes.waterelevation != null) {
+            const date = new Date(attributes.readingdate);
+            const dateString = date.toISOString().split('T')[0];
+            
+            if (!dailyAggregation[dateString]) {
+                dailyAggregation[dateString] = {
+                    sum: attributes.waterelevation,
+                    count: 1
+                };
+            } else {
+                dailyAggregation[dateString].sum += attributes.waterelevation;
+                dailyAggregation[dateString].count += 1;
+            }
+        }
+    });
+
+    // Convert daily averages to chart data
+    const chartData = Object.entries(dailyAggregation)
+        .map(([dateString, data]) => ({
+            date: new Date(dateString),
+            value: Number((data.sum / data.count).toFixed(2))
+        }))
+        .sort((a, b) => a.date - b.date);
+
+    console.log("Processed chart data:", chartData);
+
+    if (chartData.length === 0) {
+        console.log("No valid data points found");
+        $("#graph-content").hide();
+        $("#graph-message").show();
+        return;
+    }
+
     // Chart configuration
     var chartConfig = {
         "type": "serial",
@@ -1745,7 +1788,7 @@ $("#graph-content-additional").empty().hide();
         "categoryAxis": {
             "gridPosition": "start",
             "parseDates": true,
-            "minPeriod": "mm"
+            "minPeriod": "DD"
         },
         "trendLines": [],
         "graphs": [
@@ -1786,7 +1829,8 @@ $("#graph-content-additional").empty().hide();
             "cursorColor": "#258cbb",
             "limitToGraph": "g1",
             "valueLineAlpha": 0.2,
-            "valueZoomable": true
+            "valueZoomable": true,
+            "categoryBalloonDateFormat": "MM/DD/YYYY"
         },
         "valueAxes": [
             {
@@ -1807,47 +1851,16 @@ $("#graph-content-additional").empty().hide();
                 "text": "Water Elevation Chart"
             }
         ],
-        "dataProvider": []
+        "dataProvider": chartData,
+        "categoryField": "date"
     };
-
-    console.log("Chart configuration:", chartConfig);
-
-    var chartData = [];
-    let dataToProcess = Array.isArray(results) ? results : (results.features || []);
-    
-    console.log("Data to process:", dataToProcess);
-
-    for (var i = 0; i < dataToProcess.length; i++) {
-        let item = dataToProcess[i];
-        let attributes = item.attributes || item;
-        
-        if (attributes.readingdate != null && attributes.waterelevation != null) {
-            var dt = new Date(attributes.readingdate);
-            chartData.push({
-                date: dt,
-                value: attributes.waterelevation
-            });
-        }
-    }
-    
-    console.log("Processed chart data:", chartData);
-
-    if (chartData.length === 0) {
-        console.log("No valid data points found");
-        $("#graph-content").hide();
-        $("#graph-message").show();
-        return;
-    }
-
-    chartConfig.dataProvider = chartData;
-    chartConfig.categoryField = "date";
 
     console.log("Final chart configuration:", chartConfig);
 
-if (chart) {
-  chart.clear();
-  chart.dispose();
-}
+    if (chart) {
+        chart.clear();
+        chart.dispose();
+    }
 
     try {
         var chart = AmCharts.makeChart("graph-content", chartConfig);
@@ -1871,7 +1884,6 @@ if (chart) {
         res.locationtype.toLowerCase() === "spring" ? $("#graph-options").show() : $("#graph-options").hide();
     }
 }
-
 
 		// add second well results for Lucy
 		function additionalGraphResults(results)
