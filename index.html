@@ -1196,9 +1196,12 @@ function handleNotesResults(results) {
 async function LoadLocationData(locID) {
     console.log("Original locID:", locID);
     
-    // Extract just the numeric part
-    const numericID = locID.split('.').pop();
+	// Extract just the numeric part
+	const numericID = locID.split('.').pop();
     console.log("Numeric locID:", numericID);
+
+    // Make sure download options are visible when loading new location
+    $("#csv-download").show();
 
     const endpoint = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
     
@@ -1719,7 +1722,8 @@ function handleGraphResults(results) {
     
     if (!results || results.length === 0) {
         console.log('No data to graph, hiding elements');
-        $("#divSpinner, #csv-download, #graph-content").hide();
+        $("#divSpinner, #graph-content").hide();
+        // Don't hide the download buttons here
         $("#graph-message").show();
         return;
     }
@@ -1768,6 +1772,8 @@ function handleGraphResults(results) {
         console.log("No valid data points found");
         $("#graph-content").hide();
         $("#graph-message").show();
+        // Always show download options, even if there's no data currently
+        $("#csv-download").show();
         return;
     }
 
@@ -1862,7 +1868,7 @@ function handleGraphResults(results) {
         chart.dispose();
     }
 
-    try {
+	try {
         var chart = AmCharts.makeChart("graph-content", chartConfig);
         console.log("Chart created:", chart);
         
@@ -1874,10 +1880,14 @@ function handleGraphResults(results) {
         $("#divSpinner").hide();
         $("#graph-content").show();
         $("#graph-message").hide();
+        // Always show download options
+        $("#csv-download").show();
     } catch (error) {
         console.error("Error creating chart:", error);
         $("#graph-content").hide();
         $("#graph-message").text("Error creating chart. Please try again.").show();
+        // Always show download options, even if there's an error
+        $("#csv-download").show();
     }
 
     if (res.locationtype) {
