@@ -346,23 +346,43 @@ require([
 		"<span class='bold'>Wells:</span> {totalwellnumber}<br />"
 	};
 							
-	const waterareas = new WFSLayer({
-		url: msSite,
-		name: "ugs_gw_sites",
-		namespaceuri: "groundwater",
-		id: "waterareas",
-		title:"sites",
-		outFields: ["*"],
-		//displayOnPan: false,
-		//popupTemplate: areastemplate,
-		labelsVisible: true, 
-		labelingInfo: [areaLabel],
-		popupEnabled: false,
-		effect: "drop-shadow(1.5px, 1.5px, 3px rgb(0 0 0 0.6))",
-		opacity: 0.3
-		//visible: true
-	});
-	map.add(waterareas);
+const waterareas = new WFSLayer({
+    url: msSite,
+    name: "ugs_gw_sites",
+    namespaceuri: "groundwater",
+    id: "waterareas",
+    title:"Site Areas",
+    outFields: ["*"],
+    visible: true,
+    popupTemplate: areastemplate,
+    // labelsVisible: true, 
+    // labelingInfo: [areaLabel],
+    renderer: {
+        type: "simple",
+        symbol: {
+            type: "simple-fill",
+            color: [255, 176, 0, 0.3],
+            outline: {
+                color: [115, 76, 0, 0.5],
+                width: 1
+            }
+        }
+    }
+});
+
+// Add error handling
+waterareas.load().then(() => {
+    console.log("Waterareas layer loaded successfully");
+}).catch((error) => {
+    console.error("Error loading waterareas layer:", error);
+});
+
+map.add(waterareas);
+
+// Watch for layer loading errors
+waterareas.watch("loadError", function(error){
+    console.error("Layer load error: ", error);
+});
 
 	const locationstemplate = {
 		actions: [getDetailsAction],
@@ -376,7 +396,7 @@ require([
 	};
 
 	 // Create the renderer with inline SimpleMarkerSymbol definitions
-	 const locationsRenderer = new UniqueValueRenderer({
+const locationsRenderer = new UniqueValueRenderer({
     field: "locationtype",
     defaultSymbol: new SimpleMarkerSymbol({
       color: "gray",
