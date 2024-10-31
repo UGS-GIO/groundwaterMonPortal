@@ -2660,7 +2660,7 @@ async function doSearch() {
       var slyr = map.findLayerById('waterareas');
       var llyr = map.findLayerById('well-spring-locations');
       llyr.definitionExpression = "display = '1'";
-      slyr.definitionExpression = "display = '1'";
+      slyr.definitionExpression = "1 = 1";
       getAllSitesAndLocs();
     }
   } catch (error) {
@@ -2786,33 +2786,30 @@ function getAllSitesAndLocs() {
 }
 
 
-	function handleqSiteResults(results)
-	{
-		console.log("you go");
-		console.log(results);
-		var res = results.features;
-		for(var i = 0; i < res.length; i++)
-		{
-			var attr = res[i].attributes;
-			siteIDs += attr.objectid + ", ";
-			gl.siteIDs = siteIDs;
-		}
-		siteIDs = siteIDs.slice(0, -2);
-		
-		var slyr = map.findLayerById('waterareas');
-		var llyr = map.findLayerById('well-spring-locations');
-		if(siteIDs.length > 0)
-		{
-			console.log(llyr);
-			slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
-			llyr.definitionExpression = "1=2";
-			loadComplaintTable(res, "site", true);
-			toggleTableDivVisibility();
-		}
-		else
-			console.log("no site areas matching query");
-			slyr.definitionExpression = "1=2";
-	}
+function handleqSiteResults(results) {
+    console.log("you go");
+    console.log(results);
+    var siteIDs = "";
+    var res = results.features;
+
+    // Build the expression using WFS ID format
+    const quotedSiteExpression = res.map(r => `__esri_wfs_id__='ugs_gw_sites.${r.objectid}'`).join(' OR ');
+    console.log("site area id's expression: " + quotedSiteExpression);
+
+    var slyr = map.findLayerById('waterareas');
+    var llyr = map.findLayerById('well-spring-locations');
+
+    if (res.length > 0) {
+        console.log(llyr);
+        slyr.definitionExpression = quotedSiteExpression;
+        llyr.definitionExpression = "1=2";
+        loadComplaintTable(res, "site", true);
+        toggleTableDivVisibility();
+    } else {
+        console.log("no site areas matching query");
+        slyr.definitionExpression = "1=2";
+    }
+}
 	
 	/* function handleqSiteError(error)
 	{
@@ -2999,7 +2996,7 @@ function getAllSitesAndLocs() {
 			var slyr = map.findLayerById('waterareas');
 			var llyr = map.findLayerById('well-spring-locations');
 			llyr.definitionExpression = "display = '1'";
-			slyr.definitionExpression = "display = '1'";
+			slyr.definitionExpression = "1 = 1";
 			
 			dojo.empty(resultsDiv);
 			tableExpand.collapse();
