@@ -272,7 +272,7 @@ require([
 		collapsedIconClass: "esri-icon-collapse",
 		expandIconClass: "esri-icon-expand",
 		expandTooltip: "Expand Site Details",
-		autoCollapse: true,
+		autoCollapse: false,
 		view: view,
 		content: infoDiv2
 	});
@@ -310,19 +310,21 @@ require([
 	const msDataFiles = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/16"; //----------   UGS_GW_Loc_Data_Table
 	const msNotes = uri + "/arcgis/rest/services/Groundwater/GWDP/MapServer/17"; //-------------   UGS_GW_Notes
 
-	
+	//view.watch("scale", function(newScale){
+	//console.log("scale: ", newScale);
+	//});
 
 	var areaLabel = {
-		labelExpressionInfo: { expression: "name" },
-		labelPlacement: "always-horizontal",
-		maxScale: 0,
-  		minScale: 25000000,
+		labelExpressionInfo: { expression: "$feature.name" },
+		labelPlacement: "below-center",
+		maxScale: 0,   // zoomed all the way in = 0
+  		minScale: 4000000,  // 4000000 (to hide on startup)
 		symbol: {
 			type: "text",  		// autocasts as new TextSymbol()
 			color: "black",
 			font: {  		
 				family: "Arial",
-				size: 12,
+				size: 7,
 				weight: "bold"
 				},
 			haloSize: 1,
@@ -346,36 +348,36 @@ require([
 		"<span class='bold'>Wells:</span> {totalwellnumber}<br />"
 	};
 							
-const waterareas = new WFSLayer({
-    url: msSite,
-    name: "ugs_gw_sites",
-    namespaceuri: "groundwater",
-    id: "waterareas",
-    title:"Site Areas",
-    outFields: ["*"],
-    visible: true,
-    popupTemplate: areastemplate,
-    // labelsVisible: true, 
-    // labelingInfo: [areaLabel],
-    renderer: {
-        type: "simple",
-        symbol: {
-            type: "simple-fill",
-            color: [255, 176, 0, 0.3],
-            outline: {
-                color: [115, 76, 0, 0.5],
-                width: 1
-            }
-        }
-    }
-});
+	const waterareas = new WFSLayer({
+		url: msSite,
+		name: "ugs_gw_sites",
+		namespaceuri: "groundwater",
+		id: "waterareas",
+		title:"Site Areas",
+		outFields: ["*"],
+		visible: true,
+		//popupTemplate: areastemplate,
+		labelsVisible: true, 
+		labelingInfo: [areaLabel],
+		renderer: {
+			type: "simple",
+			symbol: {
+				type: "simple-fill",
+				color: [255, 176, 0, 0.3],
+				outline: {
+					color: [115, 76, 0, 0.5],
+					width: 1
+				}
+			}
+		}
+	});
 
-// Add error handling
-waterareas.load().then(() => {
-    console.log("Waterareas layer loaded successfully");
-}).catch((error) => {
-    console.error("Error loading waterareas layer:", error);
-});
+	// Add error handling
+	waterareas.load().then(() => {
+		console.log("Waterareas layer loaded successfully");
+	}).catch((error) => {
+		console.error("Error loading waterareas layer:", error);
+	});
 
 map.add(waterareas);
 
@@ -784,118 +786,17 @@ $("#btnDownloadTable").click(function() {
     });
 });
 
-		/*
- 		function enterKeyPressed(event) {
-			if (event.keyCode == 13) {
-				console.log("Enter key is pressed");
-				doSearch();
-			} else {
-				return false;
-			}
-		} 
-		*/
-		
-
-		/*
-
-		// DELETE THIS ALL.   PROBABLY FROM ROCKCORE
-
-		$("#btnDraw").click(function() {
-			map.graphics.clear();
-			selectionToolbar.activate(Draw.RECTANGLE);
-		});
-		
-		$("#searchButton").click(function() {
-			var strIn = "";
-			if(drawPoints.length > 0)
-			{
-				for(var i = 0; i < drawPoints.length; i++)
-				{
-					strIn += drawPoints[i] + ",";
-				}
-			}
-			else
-			{
-				for(var i = 0; i < locations.graphics.length; i++)
-				{
-					if(map.extent.contains(locations.graphics[i].geometry))
-					{
-						strIn += locations.graphics[i].attributes["objectid"] + ",";
-					}
-				}
-			}
-			
-			strIn = strIn.slice(0, -1);
-			
-			if(strIn.length <= 0)
-			{
-				alert("No visible points on the map.");
-				return;
-			}
-			
-			if(typeof(Storage) !== "undefined")
-			{
-				sessionStorage.whereString = "objectid IN (" + strIn + ")";
-			}
-			location.href = "locationSearch.html";
-		});
-		
-		$("#drawButton").click(function() {
-			map.graphics.clear();
-			selectionToolbar.activate(Draw.RECTANGLE);
-			$("#drawButton").css("background-color", "rgba(255,0,0,1)");
-			$("#cancelButton").show();
-		});
-		
-		$("#cancelButton").click(function() {
-			map.graphics.clear();
-			selectionToolbar.deactivate();
-			$("#drawButton").css("background-color", "rgba(40,40,40,1)");
-			$("#cancelButton").hide();
-		});
-		
-		var llyr = map.findLayerById('well-spring-locations');
-		$("#Cores").click(function() {
-			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
-		});
-		
-		$("#Cuttings").click(function() {
-			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
-		});
-		
-		$("#Both").click(function() {
-			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
-		});
-		
-		$("#Other").click(function() {
-			wells.definitionExpression = "well_items IN (" + getChecked() + ")";
-		});
-		
-		$("#settingsButton").click(function () {
-			$("#settingsButton").hide();
-			$("#settingsClose").show(0);
-			$("#settingsDiv").show(0);
-		});
-
-		$("#settingsClose").click(function () {
-			$("#settingsDiv").hide(0);
-			$("#settingsClose").hide(0);
-			$("#settingsButton").show(0);
-			$("#opacitySlider").hide(0);
-			$("#layerListDivHolder").hide(200);
-		});
-		
-		function toggleFind(evt) {
-			$("#selectionOptionsInner").toggle();
-			 //if ($('.mobileLayout').is(":visible")) {
-				//if (evt != "startup") {
-				//	toggleMobileFind();
-				//}
-				//} 
+	/*
+	function enterKeyPressed(event) {
+		if (event.keyCode == 13) {
+			console.log("Enter key is pressed");
+			doSearch();
+		} else {
+			return false;
 		}
+	} 
+	*/
 		
-		*/
-
 	
 //fix: hard code these options?  Or at least make the option box a calcite option box
 
@@ -1221,7 +1122,7 @@ async function LoadLocationData(locID) {
     console.log("Numeric locID:", numericID);
 
     // Make sure download options are visible when loading new location
-    $("#csv-download").show();
+    //$("#csv-download").show();
 
     const endpoint = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
     
@@ -1251,25 +1152,6 @@ async function LoadLocationData(locID) {
 }
 
 
-		// // fired when user clicks on a site -----------OLD-------------
-		// function LoadLocationData(locID)
-		// {
-		// 	//let qtLoc = new QueryTask(msLocation);
-		// 	let qLoc = new Query();
-		// 	qLoc.returnGeometry = false;
-		// 	qLoc.outFields = ["*"];
-		// 	qLoc.objectIds = [locID];
-		// 	//qLoc.where = "objectid = '" + locID + "'";
-
-		// 	query.executeQueryJSON(msLocation,qLoc).then(handleLocResults)
-		// 	//qtLoc.execute(qLoc, handleLocResults);
-		// }
-
-
-
-		// populates the primary well/spring information on the flyout pane
-		// whats the dif between this and handleLocsResults?
-
 
 function handleLocResults(results) {
     console.log("handleLocResults", results);
@@ -1283,6 +1165,7 @@ function handleLocResults(results) {
     gl.locs = res;
     res = res[0];
 	console.log(res);
+	view.goTo({target:[res.longitude, res.latitude]})
 
     $("#pnlTitle").empty();
     $("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
@@ -1346,6 +1229,7 @@ function appendLocationContent(res, imageUrl) {
 }
 
 async function fetchPostgREST(endpoint, params) {
+	console.log(params);
     const url = new URL(endpoint);
     Object.keys(params).forEach(key => {
         if (key === 'select') {
@@ -1375,65 +1259,64 @@ async function fetchPostgREST(endpoint, params) {
 }
 
 function continueLocationProcessing(res) {
-//trying to rename columns
-const qLith = {
-    select: 'minfrom:lithologydepthfrom.min(),maxto:lithologydepthto.max(),maxunit:lithologydepthfromunit.max()',
-    siteno: `eq.${res.locationid}`
 
-	//testing
-	// const qLith = {
-    // select: 'lithologydepthfrom,lithologydepthto,lithologydepthfromunit',
-    // siteno: `eq.${res.locationid}`,
-    // limit: 1
-};
+	//trying to rename columns
+	const qLith = {
+		select: 'minfrom:lithologydepthfrom.min(),maxto:lithologydepthto.max(),maxunit:lithologydepthfromunit.max()',
+		// select: 'lithologydepthfrom,lithologydepthto,lithologydepthfromunit',
+		siteno: `eq.${res.locationid}`
+		// limit: 1
+	};
 
     fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_lithology', qLith)
         .then(handleLithResults)
         .catch(error => console.error('Error fetching lithology data:', error));
 
-    let qNotes = {
-        select: '*',
-        order: 'datetime.desc',
-        typeid: `eq.${res.altlocationid}`,
-        type: 'eq.L'
-    };
+	if (res.altlocationid){
+		let qNotes = {
+			select: '*',
+			order: 'datetime.desc',
+			typeid: `eq.${res.altlocationid}`,
+			type: 'eq.L'
+		};
 
-    fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes', qNotes)
-        .then(handleNotesResults)
-        .catch(error => console.error('Error fetching notes:', error));
+		fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes', qNotes)
+			.then(handleNotesResults)
+			.catch(error => console.error('Error fetching notes:', error));
 
-    var dataTable = res.locationtype;
+		var dataTable = res.locationtype;
 
-    if (dataTable.toLowerCase() == "spring") {
-        $(".divFlow").show();
-        flowIDs = res.altlocationid;
-        getFlowData(res.altlocationid + "", "daily", true);
-    } else {
-        console.log("starting spring qGraph query task");
-        $(".divFlow").hide();
-        const qGraph = {
-            select: 'readingdate, waterelevation',
-            order: 'readingdate',
-            locationid: `eq.${res.altlocationid}`
-        };
+		if (dataTable.toLowerCase() == "spring") {
+			$(".divFlow").show();
+			flowIDs = res.altlocationid;
+			getFlowData(res.altlocationid + "", "daily", true);
+		} else {
+			console.log("starting spring qGraph query task");
+			$(".divFlow").hide();
+			const qGraph = {
+				select: 'readingdate, waterelevation',
+				order: 'readingdate',
+				locationid: `eq.${res.altlocationid}`
+			};
 
-        fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
-            .then(handleGraphResults)
-            .catch(error => console.error('Error fetching graph data:', error));
+			fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
+				.then(handleGraphResults)
+				.catch(error => console.error('Error fetching graph data:', error));
 
-        if (res.hascond == 1) {
-            console.log("ONE of Lucy's data points!");
-            const qGraphCond = {
-                select: 'readingdate, conductivity',
-                order: 'readingdate',
-                locationid: `eq.${res.altlocationid}`
-            };
+			if (res.hascond == 1) {
+				console.log("ONE of Lucy's data points!");
+				const qGraphCond = {
+					select: 'readingdate, conductivity',
+					order: 'readingdate',
+					locationid: `eq.${res.altlocationid}`
+				};
 
-            fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
-                .then(additionalGraphResults)
-                .catch(error => console.error('Error fetching conductivity data:', error));
-        }
-    }
+				fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
+					.then(additionalGraphResults)
+					.catch(error => console.error('Error fetching conductivity data:', error));
+			}
+		}
+ 	} else { console.log('NO ALTLOCATIONID!!! SHOULD THERE BE?') } // end if altlocationid
 }
 		
 		/* function handleLocError(error)
@@ -1525,43 +1408,6 @@ function getFlowData(id, type, hideSpin) {
     });
 }
 
-		// function getFlowData(id, type, hideSpin)
-		// {
-		// 	if (!id){
-		// 		console.log("There was no flow well id. This is probalby a well. Aborting getflowdata.php");
-		// 		return;
-		// 	} else {
-		// 		// regex: replace all quotes '' with nothing (ie remove single quotes)
-		// 		console.log("getflowdata(php) variables= "+ id +", "+type);
-		// 		$.post("getFlowData.php", { locID: id.replace(/'/g, ""), type: type }, function(data){
-		// 			//console.log(data);
-		// 			data = JSON.parse(data);
-		// 			if(data.length > 0) {
-		// 				console.log("php got data successfully");
-		// 				graphFlowData(data, hideSpin);
-		// 			} else {
-		// 				console.log("no data returned from php, hiding download options");
-		// 				$("#graph-content-flow").hide();
-		// 				$("#graph-options").hide();
-		// 				$("#csv-download").hide();
-		// 				$("#graph-content-additional").hide();
-		// 			}
-		// 		})
-		// 		.fail(function() {
-		// 			alert("Failed to fetch data from the db.");
-		// 		})
-		// 		.always(function() {
-		// 			$("#procMessage").text("Populating Graph...");
-		// 			if(hideSpin)
-		// 				$("#divSpinner").hide();
-		// 		})
-		// 	} //end else
-		// }
-		
-
-		// lance:  my new attempt to change the chart from amcharts to dygraphs
-		// see https://dygraphs.com/gallery/#g/range-selector
-		// https://dygraphs.com/gallery/range-selector.js
 		function graphFlowDataNew(data, hideSpin)
 		{
 			var arrLocs = [];
@@ -1695,7 +1541,6 @@ function getFlowData(id, type, hideSpin) {
 					tmpDt = data[i].flowdate;
 					i++;
 				}
-				
 				chartData.push(o);
 			}
 		
@@ -1709,7 +1554,7 @@ function getFlowData(id, type, hideSpin) {
 				console.log('data found, showing graph');
 				$("#graph-content-flow").show();
 				$("#graph-options").show();
-				$("#csv-download").show();
+				$("#csv-download").hide();
 				$("#graph-message").hide();
 			}
 			else
@@ -1743,8 +1588,10 @@ function handleGraphResults(results) {
     if (!results || results.length === 0) {
         console.log('No data to graph, hiding elements');
         $("#divSpinner, #graph-content").hide();
-        // Don't hide the download buttons here
+        // Don't hide the download buttons here (but where?)
+		//$("#csv-download").hide();
         $("#graph-message").show();
+		$("#csv-download").hide();
         return;
     }
     
@@ -1755,7 +1602,7 @@ function handleGraphResults(results) {
     const dailyData = new Map();  // Fixed: Added 'new' keyword
     let dataToProcess = Array.isArray(results) ? results : (results.features || []);
     
-    console.log("Data to process:", dataToProcess);
+    //console.log("Data to process:", dataToProcess);
 
     // Create a simple object to store daily data
     const dailyAggregation = {};
@@ -1786,14 +1633,13 @@ function handleGraphResults(results) {
         }))
         .sort((a, b) => a.date - b.date);
 
-    console.log("Processed chart data:", chartData);
+    //console.log("Processed chart data:", chartData);
 
     if (chartData.length === 0) {
         console.log("No valid data points found");
         $("#graph-content").hide();
         $("#graph-message").show();
-        // Always show download options, even if there's no data currently
-        $("#csv-download").show();
+        $("#csv-download").hide();
         return;
     }
 
@@ -1901,13 +1747,13 @@ function handleGraphResults(results) {
         $("#graph-content").show();
         $("#graph-message").hide();
         // Always show download options
-        $("#csv-download").show();
+        //$("#csv-download").show();
     } catch (error) {
         console.error("Error creating chart:", error);
         $("#graph-content").hide();
         $("#graph-message").text("Error creating chart. Please try again.").show();
         // Always show download options, even if there's an error
-        $("#csv-download").show();
+        //$("#csv-download").show();
     }
 
     if (res.locationtype) {
@@ -2105,73 +1951,75 @@ function handleGraphResults(results) {
 
 
 		
-		// get sites to put in results
-		function handleSiteResults(results)
+// get sites to put in results
+function handleSiteResults(results)
+{
+	console.log(results);
+	var res = results[0].features;
+	gl.site = res;
+	console.log(res[0].attributes);
+	if (res[0].attributes){
+	res = res[0].attributes;
+	$("#pnlTitle").empty();
+	if(res.linkadditionalinfo != null && res.linkadditionalinfo.length > 0)
+		$("#pnlTitle").append("Site: <a href='http://" + res.linkadditionalinfo + "' target='_blank' class='aLight'>" + res.name + "</a>");
+	else
+		$("#pnlTitle").text("Site: " + res.name);
+	$("#location-content").empty();
+	$("#site-location-content").empty();
+	if(res.imagepath != null && res.imagepath.length > 0)
+	{
+		$("#location-content").append("<a href='./" + res.imagepath + "' target='_blank'><img src='./" + res.imagepath + "' width='300px' alt='No Image'></img></a><br><br>");
+	}
+	else
+	{
+		$("#location-content").append("<span>No Image</span></br></br>");
+	}
+	$("#location-content").append("<span>Description</span><br>")
+		.append("<span>" + res.sitedescription + "</span><br><br>");
+	$("#location-content").append("<span>Location</span><br>")
+		.append("<span>Latitude: " + res.latitude + "</span><br>")
+		.append("<span>Longitude: " + res.longitude + "</span><br>")
+		.append("<span>Note Log<div id='siteNotes' style='overflow:auto;max-height:300px;'></div>");
+	//$('.cd-panel').addClass('is-visible');
+	resultsExpand.expand();
+	}
+	
+	// output a table of the array
+	dojo.empty(siteNotes);
+	//$(tableDiv).append("<div class='buttonElementShort' id='btnSelAll' style='float:left;width:initial;padding-right:8px;margin-top:2px;'><span class='buttonSpan'>Copy</span></div>");
+	var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': 'sNoteTable'}, siteNotes);
+	
+	var headerArray = ["Date", "Note"];
+	
+	var thead = dojo.create('thead', null, table);
+	var row = dojo.create('tr', {'class':'huntTableHeader'}, thead);
+	for (var i=0; i<headerArray.length; i++) {
+		var thElement = dojo.create('th', {'class': 'tcol'+(i+1), 'id':'huntCol'+i, 'innerHTML':headerArray[i]}, row);
+	}
+	var tbody = dojo.create('tbody', null, table);
 
-		{
-			console.log(results);
-			var res = results[0].features;
-			gl.site = res;
-			res = res[0].attributes;
-			$("#pnlTitle").empty();
-			if(res.linkadditionalinfo != null && res.linkadditionalinfo.length > 0)
-				$("#pnlTitle").append("Site: <a href='http://" + res.linkadditionalinfo + "' target='_blank' class='aLight'>" + res.name + "</a>");
-			else
-				$("#pnlTitle").text("Site: " + res.name);
-			$("#location-content").empty();
-			$("#site-location-content").empty();
-			if(res.imagepath != null && res.imagepath.length > 0)
-			{
-				$("#location-content").append("<a href='./" + res.imagepath + "' target='_blank'><img src='./" + res.imagepath + "' width='300px' alt='No Image'></img></a><br><br>");
-			}
-			else
-			{
-				$("#location-content").append("<span>No Image</span></br></br>");
-			}
-			$("#location-content").append("<span>Description</span><br>")
-				.append("<span>" + res.sitedescription + "</span><br><br>");
-			$("#location-content").append("<span>Location</span><br>")
-				.append("<span>Latitude: " + res.latitude + "</span><br>")
-				.append("<span>Longitude: " + res.longitude + "</span><br>")
-				.append("<span>Note Log<div id='siteNotes' style='overflow:auto;max-height:300px;'></div>");
-			//$('.cd-panel').addClass('is-visible');
-			resultsExpand.expand();
-			
-			// output a table of the array
-			dojo.empty(siteNotes);
-			//$(tableDiv).append("<div class='buttonElementShort' id='btnSelAll' style='float:left;width:initial;padding-right:8px;margin-top:2px;'><span class='buttonSpan'>Copy</span></div>");
-			var table = dojo.create('table', {'class':'resultsTable tablesorter', 'id': 'sNoteTable'}, siteNotes);
-			
-			var headerArray = ["Date", "Note"];
-			
-			var thead = dojo.create('thead', null, table);
-			var row = dojo.create('tr', {'class':'huntTableHeader'}, thead);
-			for (var i=0; i<headerArray.length; i++) {
-				var thElement = dojo.create('th', {'class': 'tcol'+(i+1), 'id':'huntCol'+i, 'innerHTML':headerArray[i]}, row);
-			}
-			var tbody = dojo.create('tbody', null, table);
-
-			for(var i = 0; i < results[1].features.length; i++)
-			{
-			//$.each(huntTableArray, function (key, value) {
-				var obj = results[1].features[i].attributes;
-				var row2 = dojo.create('tr', {'class':'huntTableRow'}, tbody);
-				if (obj.DateTime !== undefined) {
-					dojo.create('td', {'class':'tableData', 'innerHTML': new Date(obj.DateTime).toLocaleDateString()}, row2, 'last');
-				} else {
-					dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
-				}
-				
-				if (obj.Note !== undefined) {
-					dojo.create('td', {'class':'tableData', 'innerHTML': obj.Note}, row2, 'last');
-				} else {
-					dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
-				}
-			}
-			
-			var siteID = res.siteid;
-			loadSiteLocations(siteID);
+	for(var i = 0; i < results[1].features.length; i++)
+	{
+	//$.each(huntTableArray, function (key, value) {
+		var obj = results[1].features[i].attributes;
+		var row2 = dojo.create('tr', {'class':'huntTableRow'}, tbody);
+		if (obj.DateTime !== undefined) {
+			dojo.create('td', {'class':'tableData', 'innerHTML': new Date(obj.DateTime).toLocaleDateString()}, row2, 'last');
+		} else {
+			dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
 		}
+		
+		if (obj.Note !== undefined) {
+			dojo.create('td', {'class':'tableData', 'innerHTML': obj.Note}, row2, 'last');
+		} else {
+			dojo.create('td', {'class':'tableData', 'innerHTML': "N/A"}, row2, 'last');
+		}
+	}
+	
+	var siteID = res.siteid;
+	loadSiteLocations(siteID);
+}
 		
 		
 async function loadSiteLocations(site) {
@@ -2448,157 +2296,14 @@ fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes?' + new URLSe
 			$("#divSpinner").hide();
 		}
 		
-		// is this even used???
-		/*
-		function handleMultiGraphResults(results)
-		{
-			var arrLocs = [];
-			var graphs = [];
-			for(var i = 0; i < gl.locs.length; i++)
-			{
-				if(gl.locs[i].attributes.locationtype != null && gl.locs[i].attributes.locationtype.toLowerCase() == "spring")
-					continue;
-				
-				arrLocs.push(gl.locs[i].attributes.altlocationid);
-				graphs.push({
-					"balloonText":"[[" + results.fields[0].name + "]] : [[value]]",
-					"bullet":"round",
-					"bulletBorderAlpha": 1,
-					"bulletSize": 5,
-					"lineThickness": 1,
-					"title": "red line",
-					"useLineColorForBulletBorder": true,
-					"id":"Graph" + i,
-					"title":gl.locs[i].attributes.locationname,
-					"valueField":results.fields[1].name + i,
-					"hideBulletsCount": 50
-				});
-			}
-			
-			chart = AmCharts.makeChart("graph-content",
-			{
-				"type":"serial",
-				"listeners": [{
-					"event": "zoomed",
-					"method": handleZoom
-				}],
-				"marginRight": 40,
-				"marginLeft": 40,
-				"autoMarginOffset": 20,
-				"categoryField":results.fields[0].name,
-				"mouseWheelScrollEnabled": true,
-				"mouseWheelZoomEnabled": true,
-				"creditsPosition": "bottom-right",
-				"theme":"light",
-				"categoryAxis": {
-					"gridPosition":"start",
-					"parseDates": true,
-					"minPeriod": "mm"
-				},
-				"trendLines":[],
-				"graphs": graphs,
-				"chartScrollbar": {
-					"oppositeAxis":false,
-					"updateOnReleaseOnly": true,
-					"offset":25,
-					"scrollbarHeight": 20,
-					"backgroundColor": "#6C92B7",
-					"selectedBackgroundColor": "#EFEFEF",
-					"graphFillAlpha": 0,
-					"graphLineAlpha": 0.5,
-					"selectedGraphFillAlpha": 0,
-					"selectedGraphLineAlpha": 1,
-					"autoGridCount":false,
-					"dragIcon": "dragIconRectSmall",
-					"dragIconHeight": 25,
-					"color":"#FFFFFF"
-				},
-				"chartCursor": {
-					"enabled":true,
-					"cursorColor":"#6C92B7",
-					"categoryBalloonDateFormat":"M/DD/YY L:NN A"
-				},
-				"guides":[],
-				"valueAxes":[
-					{
-						"id":"ValueAxis-1",
-						"title":results.fields[1].alias + " (ft)"
-					}
-				],
-				"allLabels":[],
-				"balloon": [],
-				"legend":{
-					"enabled":true,
-					"useGraphSettings":true,
-					"valueText":""
-				},
-				"export": {
-					"enabled": true
-				}
-			});
-			
-			var chartData = [];
-			var i = 0;
-			var tmpDt = "";
-			var count;
-			var o = {};
-			results = results.features;
-			//console.log(results);
-			while(i < results.length)
-			{
-				o = {};
-				var dt = new Date(results[i].attributes.readingdate);
-				var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
-				dt = new Date(utc);
-				valCol = "waterelevation" + arrLocs.indexOf(results[i].attributes.locationid);
-				o.readingdate = dt.toLocaleString();
-				o[valCol] = results[i].attributes.waterelevation;
-				
-				tmpDt = results[i].attributes.readingdate;
-				i++;
-				while(i < results.length && tmpDt == results[i].attributes.readingdate)
-				{
-					valCol = "waterelevation" + arrLocs.indexOf(results[i].attributes.locationid);
-					o[valCol] = results[i].attributes.waterelevation;
-					tmpDt = results[i].attributes.readingdate;
-					i++;
-				}
-				
-				chartData.push(o);
-			}
-			
-			chart.dataProvider = chartData;
-			chart.validateData();
-			chart.animateAgain();
-			
-			if(chart.dataProvider.length > 0)
-			{
-				$("#graph-content").show();
-				$("#graph-message").hide();
-			}
-			else
-			{
-				$("#graph-message").show();
-			}
-
-			if(chart.dataProvider.length > 100)
-			{
-				chart.addListener("rendered", zoomChart);
-				zoomChart(chart);
-			}
-		}
-		*/
-		
-		/* function handleMultiGraphError(err)
-		{
-			console.log("MultiGraphError: ", err);
-		} */
-		
 		// rename this function, zoom is a dumb name
 		// populates the date pickers on the results pane
 		function handleZoom(e)
 		{
-			console.log("handleZoom function firing: "+e);
+			// unhide the download or it will stay hidden after clicking a site without graph
+			$("#csv-download").show();
+			console.log("handleZoom function firing: Set download start/end dates");
+			//console.log(e.startDate+", "+e.endDate);
 			var dtStart = new Date(e.startDate).toISOString().split('T')[0];
 			var dtEnd = new Date(e.endDate).toISOString().split('T')[0];
 			$("#fromDate").prop("value", dtStart );
@@ -2765,7 +2470,7 @@ async function doSearch() {
 }
 		}
 		
-		function handleSiteLocSearch(results) {
+function handleSiteLocSearch(results) {
     var sites = results[0];
     var locs = results[1];
     loadComplaintTable(sites, "site", true);
@@ -2822,7 +2527,7 @@ function handleqSiteResults(results) {
     
     // Build expression using ugs_ngwmn_monitoring_locations.{id}
     const quotedLocExpression = res.map(r => `__esri_wfs_id__='ugs_ngwmn_monitoring_locations.${r.objectid}'`).join(' OR ');
-    console.log("site area id's expression: " + quotedLocExpression);
+    //console.log("site area id's expression: " + quotedLocExpression);
     
     var slyr = map.findLayerById('waterareas');
     var llyr = map.findLayerById('well-spring-locations');
@@ -2835,9 +2540,9 @@ function handleqSiteResults(results) {
         llyr.definitionExpression = '1=2';
     }
     
-    console.log("Location layer definition:", llyr.definitionExpression);
-    console.log("Site layer definition:", slyr.definitionExpression);
-	console.log("layer", llyr);
+    //console.log("Location layer definition:", llyr.definitionExpression);
+    //console.log("Site layer definition:", slyr.definitionExpression);
+	//console.log("layer", llyr);
 }
 		/* function handleqLocsError(error)
 		{
@@ -2846,7 +2551,7 @@ function handleqSiteResults(results) {
 		
 		//Create the table view of hunts.  Is this even being used? YES
 		function loadComplaintTable(data, type, clear) {
-			console.log(data);
+			//console.log(data);
 			// output a table of the array
 			if(clear)
 				dojo.empty(resultsDiv);
@@ -2980,9 +2685,9 @@ function handleqSiteResults(results) {
 				LoadSiteAreaData(id);
 		}
 		
-		function toggleTableClose(evt) {
-			tableExpand.collapse();
-		}
+		//function toggleTableClose(evt) {
+		//	tableExpand.collapse();
+		//}
 		
 		function doClear()
 		{
