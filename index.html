@@ -1264,64 +1264,123 @@ async function fetchPostgREST(endpoint, params) {
 }
 
 function continueLocationProcessing(res) {
-
-	//trying to rename columns
-	const qLith = {
-		select: 'minfrom:lithologydepthfrom.min(),maxto:lithologydepthto.max(),maxunit:lithologydepthfromunit.max()',
-		// select: 'lithologydepthfrom,lithologydepthto,lithologydepthfromunit',
-		siteno: `eq.${res.locationid}`
-		// limit: 1
-	};
+    // Fetch lithology data
+    const qLith = {
+        select: 'minfrom:lithologydepthfrom.min(),maxto:lithologydepthto.max(),maxunit:lithologydepthfromunit.max()',
+        siteno: `eq.${res.locationid}`
+    };
 
     fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_lithology', qLith)
         .then(handleLithResults)
         .catch(error => console.error('Error fetching lithology data:', error));
 
-	if (res.altlocationid){
-		let qNotes = {
-			select: '*',
-			order: 'datetime.desc',
-			typeid: `eq.${res.altlocationid}`,
-			type: 'eq.L'
-		};
+    if (res.altlocationid) {
+        // Fetch notes data
+        let qNotes = {
+            select: '*',
+            order: 'datetime.desc',
+            typeid: `eq.${res.altlocationid}`,
+            type: 'eq.L'
+        };
 
-		fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes', qNotes)
-			.then(handleNotesResults)
-			.catch(error => console.error('Error fetching notes:', error));
+        fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes', qNotes)
+            .then(handleNotesResults)
+            .catch(error => console.error('Error fetching notes:', error));
 
-		var dataTable = res.locationtype;
-
-		if (dataTable.toLowerCase() == "spring") {
+        // Handle different location types
+		if (res.locationtype.toLowerCase() === "spring") {
 			$(".divFlow").show();
-			flowIDs = res.altlocationid;
-			getFlowData(res.altlocationid + "", "daily", true);
-		} else {
-			console.log("starting spring qGraph query task");
-			$(".divFlow").hide();
-			const qGraph = {
-				select: 'readingdate, waterelevation',
-				order: 'readingdate',
-				locationid: `eq.${res.altlocationid}`
-			};
-
-			fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
-				.then(handleGraphResults)
-				.catch(error => console.error('Error fetching graph data:', error));
-
-			if (res.hascond == 1) {
-				console.log("ONE of Lucy's data points!");
-				const qGraphCond = {
-					select: 'readingdate, conductivity',
-					order: 'readingdate',
-					locationid: `eq.${res.altlocationid}`
-				};
-
-				fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
-					.then(additionalGraphResults)
-					.catch(error => console.error('Error fetching conductivity data:', error));
+			// Ensure altlocationid is properly formatted
+			window.flowIDs = res.altlocationid ? res.altlocationid.toString() : null;
+			if (window.flowIDs) {
+				console.log("Setting initial flow data with ID:", window.flowIDs);
+				getFlowData(window.flowIDs, "daily", true);
 			}
-		}
- 	} else { console.log('NO ALTLOCATIONID!!! SHOULD THERE BE?') } // end if altlocationid
+		} else {
+            console.log("starting graph query task for well data");
+            $(".divFlow").hide();
+            
+            // Fetch water elevation data
+            const qGraph = {
+                select: 'readingdate, waterelevation',
+                order: 'readingdate',
+                locationid: `eq.${res.altlocationid}`
+            };
+
+            fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
+                .then(handleGraphResults)
+                .catch(error => console.error('Error fetching graph data:', error));
+
+            // Check for and fetch conductivity data if available
+            if (res.hascond === 1) {
+                console.log("Fetching conductivity data");
+                const qGraphCond = {
+                    select: 'readingdate, conductivity',
+                    order: 'readingdate',
+                    locationid: `eq.${res.altlocationid}`
+                };
+
+                fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
+                    .then(additionalGraphResults)
+                    .catch(error => console.error('Error fetching conductivity data:', error));
+            }
+        }
+    } else {
+        console.log('NO ALTLOCATIONID!!! SHOULD THERE BE?');
+        $("#divSpinner").hide();
+        $("#graph-message").show();
+        $("#graph-content").hide();
+        $("#graph-content-flow").hide();
+        $("#graph-options").hide();
+    }
+
+    // Initialize date pickers if they exist
+    if ($("#fromDate").length && $("#toDate").length) {
+        const today = new Date();
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(today.getMonth() - 6);
+
+        $("#fromDate").prop("value", sixMonthsAgo.toISOString().split('T')[0]);
+        $("#toDate").prop("value", today.toISOString().split('T')[0]);
+    }
+
+    // Show download options by default
+    $("#csv-download").show();
+}
+
+// Helper function for making PostgREST requests
+async function fetchPostgREST(endpoint, params) {
+    console.log('Fetching from endpoint:', endpoint);
+    console.log('With params:', params);
+
+    const url = new URL(endpoint);
+    Object.keys(params).forEach(key => {
+        if (key === 'select') {
+            url.searchParams.append(key, params[key]);
+        } else {
+            url.searchParams.append(key, params[key]);
+        }
+    });
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Received data:', data);
+        return data;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+    }
 }
 		
 		/* function handleLocError(error)
@@ -1332,25 +1391,38 @@ function continueLocationProcessing(res) {
 
 
 		 //New poostgrest call
-function getFlowData(id, type, hideSpin) {
-	$("#graph-content").empty().hide();
-	$("#graph-content-flow").empty().hide();
-	$("#graph-content-additional").empty().hide();
+		 function getFlowData(id, type, hideSpin) {
+    $("#graph-content").empty().hide();
+    $("#graph-content-flow").empty().hide();
+    $("#graph-content-additional").empty().hide();
 
     if (!id) {
-        console.log("There was no flow well id. This is probably a well. Aborting get_flow_data.");
+        console.log("No flow well id provided. Aborting get_flow_data.");
+        $("#divSpinner").hide();
         return;
     }
 
     if (type !== 'daily' && type !== 'monthly') {
         console.error("Invalid type provided. Must be 'daily' or 'monthly'.");
+        $("#divSpinner").hide();
         return;
     }
 
-    console.log("get_flow_data variables= " + id + ", " + type);
+    // Ensure clean input
+    let sanitizedId;
+    if (typeof id === 'string') {
+        sanitizedId = id.replace(/'/g, "").trim();
+    } else if (typeof id === 'number') {
+        sanitizedId = id.toString();
+    } else if (Array.isArray(id)) {
+        sanitizedId = id.join(',');
+    } else {
+        console.error("Invalid id format provided to getFlowData:", typeof id, id);
+        $("#divSpinner").hide();
+        return;
+    }
 
-    // Remove single quotes from id
-    const sanitizedId = id.replace(/'/g, "");
+    console.log(`Fetching ${type} flow data for ID:`, sanitizedId);
 
     // Construct the URL with query parameters
     const url = new URL('https://ugs-koop-umfdxaxiyq-wm.a.run.app/rpc/get_flow_data');
@@ -1367,9 +1439,7 @@ function getFlowData(id, type, hideSpin) {
     })
     .then(response => {
         if (!response.ok) {
-            return response.text().then(text => {
-                throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
-            });
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
     })
@@ -1377,36 +1447,31 @@ function getFlowData(id, type, hideSpin) {
         console.log("Raw data received:", data);
 
         if (data && Array.isArray(data) && data.length > 0) {
-            console.log("Data fetched successfully");
-            console.log("First item structure:", JSON.stringify(data[0], null, 2));
-
-            // Transform the data to match the expected format
             const transformedData = data.map(item => ({
                 flowdate: item.flow_date,
                 discharge: parseFloat(item.discharge)
             }));
 
-            console.log("Transformed data:", transformedData);
-
-            if (typeof graphFlowData === 'function') {
-                graphFlowData(transformedData, hideSpin);
-            } else {
-                console.error("graphFlowData is not a function", typeof graphFlowData);
-            }
+            graphFlowData(transformedData, hideSpin);
+            $("#graph-content-flow").show();
+            $("#graph-options").show();
+            $("#csv-download").show();
+            $("#graph-message").hide();
         } else {
-            console.log("No data returned or data is not in expected format", data);
+            console.log("No data returned");
             $("#graph-content-flow").hide();
             $("#graph-options").hide();
             $("#csv-download").hide();
-            $("#graph-content-additional").hide();
+            $("#graph-message").show();
         }
     })
     .catch(error => {
-        console.error('Error details:', error);
-        alert("Failed to fetch data from the db. Check the console for more details.");
+        console.error('Error fetching flow data:', error);
+        $("#graph-content-flow").hide();
+        $("#graph-options").hide();
+        $("#graph-message").show().text("Error loading flow data");
     })
     .finally(() => {
-        $("#procMessage").text("Populating Graph...");
         if (hideSpin) {
             $("#divSpinner").hide();
         }
@@ -1918,7 +1983,32 @@ function handleGraphResults(results) {
 		
 		$(".flow").change(function() {
 			$("#divSpinner").show();
-			getFlowData(flowIDs, $(this).val(), true);
+			if (window.flowIDs !== undefined && window.flowIDs !== null) {
+				// Handle different types of flowIDs
+				let cleanFlowIDs;
+				if (typeof window.flowIDs === 'string') {
+					cleanFlowIDs = window.flowIDs.replace(/'/g, "").trim();
+				} else if (typeof window.flowIDs === 'number') {
+					cleanFlowIDs = window.flowIDs.toString();
+				} else if (Array.isArray(window.flowIDs)) {
+					cleanFlowIDs = window.flowIDs.join(',');
+				} else {
+					console.error("Invalid flowIDs format:", window.flowIDs);
+					$("#divSpinner").hide();
+					return;
+				}
+
+				console.log("Processing flow toggle with ID:", cleanFlowIDs);
+				console.log("Selected type:", $(this).val());
+
+				getFlowData(cleanFlowIDs, $(this).val(), true);
+			} else {
+				console.error("No flow IDs available");
+				$("#divSpinner").hide();
+				$("#graph-message").show();
+				$("#graph-content-flow").hide();
+				$("#graph-options").hide();
+			}
 		});
 		
 	
