@@ -357,7 +357,7 @@ require([
 		outFields: ["*"],
 		visible: true,
 		//popupTemplate: areastemplate,
-		labelsVisible: true, 
+		//labelsVisible: true, 
 		labelingInfo: [areaLabel],
 		renderer: {
 			type: "simple",
@@ -734,15 +734,20 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
 }
 // Event listener for the main download button
 $("#btnDownload").click(function() {
-  if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
-    return;
+    if(!document.getElementById('fromDate').valueAsDate || !document.getElementById('toDate').valueAsDate) {
+        alert("Please select both start and end dates");
+        return;
+    }
 
-  downloading = true;
-  $("#procMessage").text("Downloading Data...");
-  $("#divSpinner").show();
+    if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
+        return;
 
-  var fromdate = document.getElementById('fromDate').valueAsDate.toISOString().split('T')[0];
-  var todate = document.getElementById('toDate').valueAsDate.toISOString().split('T')[0];
+    downloading = true;
+    $("#procMessage").text("Downloading Data...");
+    $("#divSpinner").show();
+
+    var fromdate = document.getElementById('fromDate').valueAsDate.toISOString().split('T')[0];
+    var todate = document.getElementById('toDate').valueAsDate.toISOString().split('T')[0];
   var type = $("input[name='flowDownload']:checked").val();
 
   console.log('Download button clicked. Parameters:', {
@@ -1554,7 +1559,7 @@ function getFlowData(id, type, hideSpin) {
 				console.log('data found, showing graph');
 				$("#graph-content-flow").show();
 				$("#graph-options").show();
-				$("#csv-download").hide();
+				$("#csv-download").show();
 				$("#graph-message").hide();
 			}
 			else
@@ -2345,20 +2350,20 @@ async function doSearch() {
 
   try {
     if (site.length > 0) {
-      const response = await fetch(`${msSite}?select=*&name=ilike.*${encodeURIComponent(site)}*`);
+      const response = await fetch(`${msSite}?select=*&display=eq.1&name=ilike.*${encodeURIComponent(site)}*`);
       const data = await response.json();
       handleqSiteResults({ features: data });
     } else if (loc.length > 0) {
-      const response = await fetch(`${msLocation}?select=*&or=(locationid.ilike.*${encodeURIComponent(loc)}*,locationname.ilike.*${encodeURIComponent(loc)}*)`);
+      const response = await fetch(`${msLocation}?select=*&display=eq.1&or=(locationid.ilike.*${encodeURIComponent(loc)}*,locationname.ilike.*${encodeURIComponent(loc)}*)`);
       const data = await response.json();
 	  console.log(data);
       handleqLocsResults({ features: data });
     } else if (project != null && project.length > 0) {
-      const response = await fetch(`${msP2SW}?select=*&projectid=eq.${encodeURIComponent(project)}`);
+      const response = await fetch(`${msP2SW}?select=*&display=eq.1&projectid=eq.${encodeURIComponent(project)}`);
       const data = await response.json();
       handleP2SWResults({ features: data });
     } else if (locType != null && locType.length > 0) {
-      const response = await fetch(`${msLocation}?select=*&locationdatatable=eq.${encodeURIComponent(locType)}`);
+      const response = await fetch(`${msLocation}?select=*&display=eq.1&locationdatatable=eq.${encodeURIComponent(locType)}`);
       const data = await response.json();
       handleqLocsResults({ features: data });
     } else {
@@ -2479,6 +2484,7 @@ function handleSiteLocSearch(results) {
 }
 		
 function getAllSitesAndLocs() {
+	console.log("getAllSitesandLocs");
     const qSites = { select: '*' };
     const qLocs = { select: '*' };
 
