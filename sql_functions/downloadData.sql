@@ -81,6 +81,7 @@ BEGIN
                WHERE r.locationid = $1
                  AND r.readingdate BETWEEN $2 AND $3
                GROUP BY date_trunc(''day'', r.readingdate)
+               ORDER BY date_trunc(''day'', r.readingdate) DESC
            ';
        ELSIF p_type = 'monthly' THEN
            v_sql := '
@@ -100,6 +101,7 @@ BEGIN
                WHERE r.locationid = $1
                  AND r.readingdate BETWEEN $2 AND $3
                GROUP BY date_trunc(''month'', r.readingdate)
+               ORDER BY date_trunc(''month'', r.readingdate) DESC
            ';
        ELSE
            v_sql := '
@@ -118,6 +120,7 @@ BEGIN
                FROM gwportal.reading r
                WHERE r.locationid = $1
                  AND r.readingdate BETWEEN $2 AND $3
+               ORDER BY r.readingdate DESC
            ';
        END IF;
    ELSE
@@ -140,6 +143,7 @@ BEGIN
                WHERE f.locationid = $1
                  AND f.flowdate BETWEEN $2 AND $3
                GROUP BY date_trunc(''day'', f.flowdate)
+               ORDER BY date_trunc(''day'', f.flowdate) DESC
            ';
        ELSIF p_type = 'monthly' THEN
            v_sql := '
@@ -160,6 +164,7 @@ BEGIN
                WHERE f.locationid = $1
                  AND f.flowdate BETWEEN $2 AND $3
                GROUP BY date_trunc(''month'', f.flowdate)
+               ORDER BY date_trunc(''month'', f.flowdate) DESC
            ';
        ELSE
            v_sql := '
@@ -179,15 +184,9 @@ BEGIN
                LEFT JOIN gwportal.ugs_gw_comments c ON c.comment_id = f.comments
                WHERE f.locationid = $1
                  AND f.flowdate BETWEEN $2 AND $3
+               ORDER BY f.flowdate DESC
            ';
        END IF;
-   END IF;
-
-   -- Modified ORDER BY to sort by actual date first
-   IF lower(v_location_type) != 'spring' THEN
-       v_sql := v_sql || ' ORDER BY date_trunc(''day'', r.readingdate) DESC';
-   ELSE
-       v_sql := v_sql || ' ORDER BY date_trunc(''day'', f.flowdate) DESC';
    END IF;
 
    RETURN QUERY EXECUTE v_sql USING p_well_id::integer, p_from_date, p_to_date;
