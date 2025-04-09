@@ -71,7 +71,7 @@ BEGIN
             SELECT 
                 NULL::TEXT as metadata_key,
                 NULL::TEXT as metadata_value,
-                to_char(r.readingdate, ''DD/MM/YYYY'') as reading_date,
+                to_char(r.readingdate, ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
                 r.measuredlevel::TEXT,
                 r.temperature::TEXT,
                 r.baroefficiencylevel::TEXT,
@@ -90,7 +90,7 @@ BEGIN
                 SELECT 
                     NULL::TEXT as metadata_key,
                     NULL::TEXT as metadata_value,
-                    to_char(date_trunc(''day'', r.readingdate), ''DD/MM/YYYY'') as reading_date,
+                    to_char(date_trunc(''day'', r.readingdate), ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
                     AVG(r.measuredlevel)::TEXT as measuredlevel,
                     AVG(r.temperature)::TEXT as temperature,
                     AVG(r.baroefficiencylevel)::TEXT as baroefficiencylevel,
@@ -109,7 +109,7 @@ BEGIN
                 SELECT 
                     NULL::TEXT as metadata_key,
                     NULL::TEXT as metadata_value,
-                    to_char(date_trunc(''month'', r.readingdate), ''DD/MM/YYYY'') as reading_date,
+                    to_char(date_trunc(''month'', r.readingdate), ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
                     AVG(r.measuredlevel)::TEXT as measuredlevel,
                     AVG(r.temperature)::TEXT as temperature,
                     AVG(r.baroefficiencylevel)::TEXT as baroefficiencylevel,
@@ -129,7 +129,7 @@ BEGIN
             SELECT 
                 NULL::TEXT as metadata_key,
                 NULL::TEXT as metadata_value,
-                to_char(f.flowdate, ''DD/MM/YYYY'') as reading_date,
+                to_char(f.flowdate, ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
                 NULL::TEXT as measuredlevel,
                 NULL::TEXT as temperature,
                 NULL::TEXT as baroefficiencylevel,
@@ -149,7 +149,7 @@ BEGIN
                 SELECT 
                     NULL::TEXT as metadata_key,
                     NULL::TEXT as metadata_value,
-                    to_char(date_trunc(''day'', f.flowdate), ''DD/MM/YYYY'') as reading_date,
+                    to_char(date_trunc(''day'', f.flowdate), ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
                     NULL::TEXT as measuredlevel,
                     NULL::TEXT as temperature,
                     NULL::TEXT as baroefficiencylevel,
@@ -169,7 +169,7 @@ BEGIN
                 SELECT 
                     NULL::TEXT as metadata_key,
                     NULL::TEXT as metadata_value,
-                    to_char(date_trunc(''month'', f.flowdate), ''DD/MM/YYYY'') as reading_date,
+                    to_char(date_trunc(''month'', f.flowdate), ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
                     NULL::TEXT as measuredlevel,
                     NULL::TEXT as temperature,
                     NULL::TEXT as baroefficiencylevel,
