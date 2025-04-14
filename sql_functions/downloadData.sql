@@ -20,10 +20,22 @@ DECLARE
     v_sql TEXT;
     v_location_type TEXT;
     v_metadata RECORD;
+    v_date_format TEXT;
+    v_end_date TIMESTAMP;
 BEGIN
     -- Input validation
     IF p_from_date > p_to_date THEN
         RAISE EXCEPTION 'Invalid date range';
+    END IF;
+    
+    -- Set end date to end of day (23:59:59)
+    v_end_date := p_to_date + INTERVAL '1 day - 1 second';
+
+    -- Set the date format based on the type parameter
+    IF p_type = 'all' THEN
+        v_date_format := 'MM/DD/YYYY HH24:MI:SS';
+    ELSE
+        v_date_format := 'MM/DD/YYYY';
     END IF;
 
     -- Retrieve location type and metadata
@@ -71,7 +83,7 @@ BEGIN
             SELECT 
                 NULL::TEXT as metadata_key,
                 NULL::TEXT as metadata_value,
-                to_char(r.readingdate, ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
+                to_char(r.readingdate, ''' || v_date_format || ''') as reading_date,
                 r.measuredlevel::TEXT,
                 r.temperature::TEXT,
                 r.baroefficiencylevel::TEXT,
@@ -83,6 +95,7 @@ BEGIN
             FROM gwportal.reading r
             WHERE r.locationid = $1
               AND r.readingdate BETWEEN $2 AND $3
+            ORDER BY r.readingdate
         ';
 
         IF p_type = 'daily' THEN
@@ -90,38 +103,40 @@ BEGIN
                 SELECT 
                     NULL::TEXT as metadata_key,
                     NULL::TEXT as metadata_value,
-                    to_char(date_trunc(''day'', r.readingdate), ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
-                    AVG(r.measuredlevel)::TEXT as measuredlevel,
-                    AVG(r.temperature)::TEXT as temperature,
-                    AVG(r.baroefficiencylevel)::TEXT as baroefficiencylevel,
-                    AVG(r.measureddtw)::TEXT as measureddtw,
-                    AVG(r.driftcorrection)::TEXT as driftcorrection,
-                    AVG(r.waterelevation)::TEXT as waterelevation,
+                    to_char(date_trunc(''day'', r.readingdate), ''' || v_date_format || ''') as reading_date,
+                    TRIM(TO_CHAR(ROUND(AVG(r.measuredlevel)::numeric, 4), ''999999999999990.9999'')) as measuredlevel,
+                    TRIM(TO_CHAR(ROUND(AVG(r.temperature)::numeric, 4), ''999999999999990.9999'')) as temperature,
+                    TRIM(TO_CHAR(ROUND(AVG(r.baroefficiencylevel)::numeric, 4), ''999999999999990.9999'')) as baroefficiencylevel,
+                    TRIM(TO_CHAR(ROUND(AVG(r.measureddtw)::numeric, 4), ''999999999999990.9999'')) as measureddtw,
+                    TRIM(TO_CHAR(ROUND(AVG(r.driftcorrection)::numeric, 4), ''999999999999990.9999'')) as driftcorrection,
+                    TRIM(TO_CHAR(ROUND(AVG(r.waterelevation)::numeric, 4), ''999999999999990.9999'')) as waterelevation,
                     NULL::TEXT as discharge,
                     NULL::TEXT as comment
                 FROM gwportal.reading r
                 WHERE r.locationid = $1
                   AND r.readingdate BETWEEN $2 AND $3
                 GROUP BY date_trunc(''day'', r.readingdate)
+                ORDER BY date_trunc(''day'', r.readingdate)
             ';
         ELSIF p_type = 'monthly' THEN
             v_sql := '
                 SELECT 
                     NULL::TEXT as metadata_key,
                     NULL::TEXT as metadata_value,
-                    to_char(date_trunc(''month'', r.readingdate), ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
-                    AVG(r.measuredlevel)::TEXT as measuredlevel,
-                    AVG(r.temperature)::TEXT as temperature,
-                    AVG(r.baroefficiencylevel)::TEXT as baroefficiencylevel,
-                    AVG(r.measureddtw)::TEXT as measureddtw,
-                    AVG(r.driftcorrection)::TEXT as driftcorrection,
-                    AVG(r.waterelevation)::TEXT as waterelevation,
+                    to_char(date_trunc(''month'', r.readingdate), ''' || v_date_format || ''') as reading_date,
+                    TRIM(TO_CHAR(ROUND(AVG(r.measuredlevel)::numeric, 4), ''999999999999990.9999'')) as measuredlevel,
+                    TRIM(TO_CHAR(ROUND(AVG(r.temperature)::numeric, 4), ''999999999999990.9999'')) as temperature,
+                    TRIM(TO_CHAR(ROUND(AVG(r.baroefficiencylevel)::numeric, 4), ''999999999999990.9999'')) as baroefficiencylevel,
+                    TRIM(TO_CHAR(ROUND(AVG(r.measureddtw)::numeric, 4), ''999999999999990.9999'')) as measureddtw,
+                    TRIM(TO_CHAR(ROUND(AVG(r.driftcorrection)::numeric, 4), ''999999999999990.9999'')) as driftcorrection,
+                    TRIM(TO_CHAR(ROUND(AVG(r.waterelevation)::numeric, 4), ''999999999999990.9999'')) as waterelevation,
                     NULL::TEXT as discharge,
                     NULL::TEXT as comment
                 FROM gwportal.reading r
                 WHERE r.locationid = $1
                   AND r.readingdate BETWEEN $2 AND $3
                 GROUP BY date_trunc(''month'', r.readingdate)
+                ORDER BY date_trunc(''month'', r.readingdate)
             ';
         END IF;
     ELSE
@@ -129,7 +144,7 @@ BEGIN
             SELECT 
                 NULL::TEXT as metadata_key,
                 NULL::TEXT as metadata_value,
-                to_char(f.flowdate, ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
+                to_char(f.flowdate, ''' || v_date_format || ''') as reading_date,
                 NULL::TEXT as measuredlevel,
                 NULL::TEXT as temperature,
                 NULL::TEXT as baroefficiencylevel,
@@ -142,6 +157,7 @@ BEGIN
             LEFT JOIN gwportal.ugs_gw_comments c ON c.comment_id = f.comments
             WHERE f.locationid = $1
               AND f.flowdate BETWEEN $2 AND $3
+            ORDER BY f.flowdate
         ';
 
         IF p_type = 'daily' THEN
@@ -149,48 +165,48 @@ BEGIN
                 SELECT 
                     NULL::TEXT as metadata_key,
                     NULL::TEXT as metadata_value,
-                    to_char(date_trunc(''day'', f.flowdate), ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
+                    to_char(date_trunc(''day'', f.flowdate), ''' || v_date_format || ''') as reading_date,
                     NULL::TEXT as measuredlevel,
                     NULL::TEXT as temperature,
                     NULL::TEXT as baroefficiencylevel,
                     NULL::TEXT as measureddtw,
                     NULL::TEXT as driftcorrection,
                     NULL::TEXT as waterelevation,
-                    AVG(f.discharge)::TEXT as discharge,
+                    TRIM(TO_CHAR(ROUND(AVG(f.discharge)::numeric, 4), ''999999999999990.9999'')) as discharge,
                     string_agg(DISTINCT c.comment::TEXT, ''; '') as comment
                 FROM gwportal.ugs_gw_flow f
                 LEFT JOIN gwportal.ugs_gw_comments c ON c.comment_id = f.comments
                 WHERE f.locationid = $1
                   AND f.flowdate BETWEEN $2 AND $3
                 GROUP BY date_trunc(''day'', f.flowdate)
+                ORDER BY date_trunc(''day'', f.flowdate)
             ';
         ELSIF p_type = 'monthly' THEN
             v_sql := '
                 SELECT 
                     NULL::TEXT as metadata_key,
                     NULL::TEXT as metadata_value,
-                    to_char(date_trunc(''month'', f.flowdate), ''DD/MM/YYYY HH24:MI:SS'') as reading_date,
+                    to_char(date_trunc(''month'', f.flowdate), ''' || v_date_format || ''') as reading_date,
                     NULL::TEXT as measuredlevel,
                     NULL::TEXT as temperature,
                     NULL::TEXT as baroefficiencylevel,
                     NULL::TEXT as measureddtw,
                     NULL::TEXT as driftcorrection,
                     NULL::TEXT as waterelevation,
-                    AVG(f.discharge)::TEXT as discharge,
+                    TRIM(TO_CHAR(ROUND(AVG(f.discharge)::numeric, 4), ''999999999999990.9999'')) as discharge,
                     string_agg(DISTINCT c.comment::TEXT, ''; '') as comment
                 FROM gwportal.ugs_gw_flow f
                 LEFT JOIN gwportal.ugs_gw_comments c ON c.comment_id = f.comments
                 WHERE f.locationid = $1
                   AND f.flowdate BETWEEN $2 AND $3
                 GROUP BY date_trunc(''month'', f.flowdate)
+                ORDER BY date_trunc(''month'', f.flowdate)
             ';
         END IF;
     END IF;
 
-    v_sql := v_sql || ' ORDER BY reading_date';
-
     -- Execute the query and return results
-    RETURN QUERY EXECUTE v_sql USING p_well_id::integer, p_from_date, p_to_date;
+    RETURN QUERY EXECUTE v_sql USING p_well_id::integer, p_from_date, v_end_date;
 
     -- Check if no data was returned
     IF NOT FOUND THEN
