@@ -959,8 +959,8 @@ function handleComboResults(results)
 			case "3":
 				var sql = "WLNetworkName = 'Courthouse Wash'";
 			break;
-			case 4:
-				var sql = "WLNetworkName = UGS-NGWMN";
+			case "4":
+				var sql = "WLNetworkName = 'UGS-NGWMN'";
 			break;
 			case "5":
 				var sql = "WLNetworkName = 'Snake Valley Wetlands'";
@@ -2431,7 +2431,7 @@ async function doSearch() {
 
   try {
     if (site.length > 0) {
-      const response = await fetch(`${msSite}?select=*&display=eq.1&name=ilike.*${encodeURIComponent(site)}*`);
+      const response = await fetch(`${msSite}?select=*&name=ilike.*${encodeURIComponent(site)}*`);
       const data = await response.json();
       handleqSiteResults({ features: data });
     } else if (loc.length > 0) {
