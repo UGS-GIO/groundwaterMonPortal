@@ -811,7 +811,7 @@ async function getCombos() {
     
     try {
         const [projData, dataFilesData, laData] = await Promise.all([
-            fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_project?select=*')
+            fetch('https://ugs-koop-734948684426.us-west3.run.app/unique_wlnetworknames?select=*')
                 .then(response => response.json()),
             fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_loc_data_table?select=*')
                 .then(response => response.json()),
@@ -832,6 +832,7 @@ async function getCombos() {
 function handleComboResults(results)
 {
 	console.log("loading combo box options");
+	console.log(results);
 	var projects = results[0];
 	var dataFiles = results[1];
 	localAquifers = results[2];
@@ -853,8 +854,10 @@ function handleComboResults(results)
 	for(var i = 0; i < res.length; i++)
 	{
 		var option = document.createElement("option");
-		option.text = res[i].attributes.name;
-		option.value = res[i].attributes.objectid;
+		//option.text = res[i].attributes.name;
+		option.text = res[i].attributes.wlnetworkname;
+		//option.value = res[i].attributes.objectid;
+		option.value = i;
 		projectSelect.add(option);
 	}
 
@@ -944,11 +947,13 @@ function handleComboResults(results)
 	// update the map without having to push search
 	$("#projectSelectAlt").on('change', function(n) {
 		console.log(n.target.value);
+		//console.log($('#projectSelectAlt').find('option:selected').text());
 		$("#locationName").val("");
 		$("#siteName").val("");
 		$('#locationTypeSelect').val('').prop('selected', true);
 		$("#locationTypeSelect").trigger('change.select2');   // what does this do?!!!
 		// use "AltLocationContext" instead of network name?
+		/*
 		switch(n.target.value) {
 			case "1":
 				var sql = "WLNetworkName = 'Snake Valley'";
@@ -969,6 +974,8 @@ function handleComboResults(results)
 				var sql = "WLNetworkName = 'Juab Valley'";
 			break;
 		} 
+		*/
+		var sql = "WLNetworkName = '" + $('#projectSelectAlt').find('option:selected').text() + "'";
 		var llyr = map.findLayerById('well-spring-locations');
 		// fixing this. lance
 		//llyr.definitionExpression = "siteid IN (-1,69)";
