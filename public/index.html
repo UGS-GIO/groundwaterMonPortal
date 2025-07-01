@@ -1213,7 +1213,7 @@ function appendLocationContent(res, imageUrl) {
     $("#location-content")
         .append((res.wrnum == null ? "" : "<br><span>Water Rights Number: " + res.wrnum + "</span><br>"))
         .append((res.win == null ? "" : "<br><span>WIN: <a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
-        .append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure + "</span><br>"))
+        .append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure.toFixed(1) + "</span><br>"))
         .append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
         .append("<br><span id='si'>Screened Interval</span><br>")
         .append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
@@ -1583,8 +1583,34 @@ async function fetchPostgREST(endpoint, params) {
 					"valueText":""
 				},
 				"export": {
-					"enabled": true
-				}
+					"enabled": true, 
+					"menu": [ {
+					"class": "export-main",
+					"label": "Export",
+					"menu": [
+						{
+						"label": "Download as PNG",
+						"format": "png"
+						}, {
+						"label": "Print chart",
+						"format": "print"
+						}, {
+						"label": "Save data",
+						"menu": [{
+							"format": "csv",
+							"label": "CSV"
+						}, {
+							"format": "xlsx",
+							"label": "XLSX"
+						}, {
+							"format": "json",
+							"label": "JSON"
+						}]
+						}
+					]
+					} ]
+				} 
+				
 			});
 			
 			var chartData = [];
@@ -1923,6 +1949,7 @@ function handleGraphResults(results) {
 				"export": {
 					"enabled": true
 				}
+				
 			});
 			
 			var chartData = [];
@@ -2190,7 +2217,7 @@ async function loadSiteLocations(site) {
 						.append((res.usgs_id == null || res.usgs_id.length <= 0 ? "" : "<br><span>USGS Well Number: " + "<a href='http://nwis.waterdata.usgs.gov/nwis/gwlevels/?site_no=" + res.usgs_id + "' target='_blank'>" + res.usgs_id + "</a>" + "</span><br><br>"))
 						.append((res.wrnm == null ? "" : "<span>Water Rights Number: " + res.wrnum + "</span><br>"))
 						.append((res.win == null ? "" : "<br><span>WIN: " + "<a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
-						.append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure + "</span><br>"))
+						.append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure.toFixed(1) + "</span><br>"))
 						.append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.selldepthmeasureunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
 						.append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
 						.append((res.aquifername == null ? "" : "<br><span>Screened Unit: " + getLocalAquifer(res.AquiferName) + "</span><br>"))
@@ -2506,9 +2533,8 @@ async function doSearch() {
 			console.log(error);
 		} */
 		
-		function getSitesAndLocs(siteIDs, locIDs)
-		{
-			function getSitesAndLocs(siteIDs, locIDs) {
+	function getSitesAndLocs(siteIDs, locIDs) {
+	function getSitesAndLocs(siteIDs, locIDs) {
     // Fetch sites data
     fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_sites?' + new URLSearchParams({
         select: '*',
@@ -2561,7 +2587,7 @@ async function doSearch() {
         console.error('Error fetching sites and locations data:', error);
     });
 }
-		}
+}
 		
 function handleSiteLocSearch(results) {
     var sites = results[0];
@@ -2615,7 +2641,7 @@ function handleqSiteResults(results) {
 		console.log("There was an error: msg given was, "+ error);
 	} */
 		
-		function handleqLocsResults(results) {
+function handleqLocsResults(results) {
     console.log(results);
     var res = results.features;
     
@@ -2846,10 +2872,10 @@ $("#helpDiv").show();
 
 
 
-  </script>
-  </head>
+</script>
+</head>
 
-  <body>
+<body>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-56QNLTH8"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -3050,3 +3076,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   </body>
 </html>
+
+
+
