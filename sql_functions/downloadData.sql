@@ -9,7 +9,6 @@ CREATE OR REPLACE FUNCTION gwportal.get_groundwater_data(
    reading_date TEXT,
    measured_level TEXT,
    temperature TEXT,
-   baro_efficiency_level TEXT,
    measured_dtw TEXT,
    drift_correction TEXT,
    water_elevation TEXT,
