@@ -1155,8 +1155,10 @@ async function LoadLocationData(locID) {
 }
 
 
-
+// called when user clicks directly on a site
+// OR on advanced location search results table result
 function handleLocResults(results) {
+	console.log('HANDLE LOC RESULTS');
     console.log("handleLocResults", results);
     if (chart != null) {
         chart.clear();
@@ -1221,14 +1223,16 @@ function appendLocationContent(res, imageUrl) {
         .append((res.notes == null ? "" : "<br><span>Notes: " + res.notes + "</span>"))
         .append("<br><span>Note Log<div id='locNotes1' style='overflow:auto;max-height:300px;'></div>");
 
+	var pUrl = 'https://geology.utah.gov/docs/gwp/snakevalley/logs/';
+
     if (res.linklithologiclog != null)
-        $("#location-content").append("<span><a href='" + res.linklithologiclog + "' target='_blank'>Lithologic Log</a></span>");
+        $("#location-content").append("<span><a href='" + pUrl + res.linklithologiclog + "' target='_blank'>Lithologic Log</a></span>");
 
     if (res.linkgeophysicallog != null)
-        $("#location-content").append("<br><span><a href='" + res.linkgeophysicallog + "' target='_blank'>Geophysical Log</a></span>");
+        $("#location-content").append("<br><span><a href='" + pUrl + res.linkgeophysicallog + "' target='_blank'>Geophysical Log</a></span>");
 
     if (res.linkdevelopmentlog != null)
-        $("#location-content").append("<br><span><a href='" + res.linkdevelopmentlog + "' target='_blank'>Development Log</a></span>");
+        $("#location-content").append("<br><span><a href='" + pUrl + res.linkdevelopmentlog + "' target='_blank'>Development Log</a></span>");
 }
 
 async function fetchPostgREST(endpoint, params) {
@@ -2037,7 +2041,7 @@ function handleGraphResults(results) {
 		});
 		
 	
-		function LoadSiteAreaData(siteID) {
+function LoadSiteAreaData(siteID) {
     $("#divSpinner").show();
 
     const siteUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_sites';
@@ -2071,38 +2075,41 @@ function handleGraphResults(results) {
 
 
 		
-// get sites to put in results
+// get sites to put in results expandopane (called only from above function)
+// called when user clicks on result from advanced site area search
 function handleSiteResults(results)
 {
+	console.log('HANDLE SITE RESULTS FUNCTION');
 	console.log(results);
 	var res = results[0].features;
-	gl.site = res;
+	//gl.site = res;   // part of old code? not sure where it was used.
 	console.log(res[0].attributes);
 	if (res[0].attributes){
-	res = res[0].attributes;
-	$("#pnlTitle").empty();
-	if(res.linkadditionalinfo != null && res.linkadditionalinfo.length > 0)
-		$("#pnlTitle").append("Site: <a href='http://" + res.linkadditionalinfo + "' target='_blank' class='aLight'>" + res.name + "</a>");
-	else
-		$("#pnlTitle").text("Site: " + res.name);
-	$("#location-content").empty();
-	$("#site-location-content").empty();
-	if(res.imagepath != null && res.imagepath.length > 0)
-	{
-		$("#location-content").append("<a href='./" + res.imagepath + "' target='_blank'><img src='./" + res.imagepath + "' width='300px' alt='No Image'></img></a><br><br>");
-	}
-	else
-	{
-		$("#location-content").append("<span>No Image</span></br></br>");
-	}
-	$("#location-content").append("<span>Description</span><br>")
-		.append("<span>" + res.sitedescription + "</span><br><br>");
-	$("#location-content").append("<span>Location</span><br>")
-		.append("<span>Latitude: " + res.latitude + "</span><br>")
-		.append("<span>Longitude: " + res.longitude + "</span><br>")
-		.append("<span>Note Log<div id='siteNotes' style='overflow:auto;max-height:300px;'></div>");
-	//$('.cd-panel').addClass('is-visible');
-	resultsExpand.expand();
+		res = res[0].attributes;
+		//console.log(res);
+		$("#pnlTitle").empty();
+		if(res.linkadditionalinfo != null && res.linkadditionalinfo.length > 0)
+			$("#pnlTitle").append("Site: <a href='http://" + res.linkadditionalinfo + "' target='_blank' class='aLight'>" + res.name + "</a>");
+		else
+			$("#pnlTitle").text("Site: " + res.name);
+		$("#location-content").empty();
+		$("#site-location-content").empty();
+		if(res.imagepath != null && res.imagepath.length > 0)
+		{
+			$("#location-content").append("<a href='./" + res.imagepath + "' target='_blank'><img src='./" + res.imagepath + "' width='300px' alt='No Image'></img></a><br><br>");
+		}
+		else
+		{
+			$("#location-content").append("<span>No Image</span></br></br>");
+		}
+		$("#location-content").append("<span>Description</span><br>")
+			.append("<span>" + res.sitedescription + "</span><br><br>");
+		$("#location-content").append("<span>Location</span><br>")
+			.append("<span>Latitude: " + res.latitude + "</span><br>")
+			.append("<span>Longitude: " + res.longitude + "</span><br>")
+			.append("<span>Note Log<div id='siteNotes' style='overflow:auto;max-height:300px;'></div>");
+		//$('.cd-panel').addClass('is-visible');
+		resultsExpand.expand();
 	}
 	
 	// output a table of the array
@@ -2173,6 +2180,8 @@ async function loadSiteLocations(site) {
 
 		// populates the primary well/spring information on the flyout pane
 		// whats the dif between this and handleLocResults?   <-----------------------------great question! JH
+		// OLD CODE, DONT THINK ITS USED, GOING TO COMMENT OUT UNTIL WE KNOW FOR SURE, THEN DELETE
+		/*
 		function handleLocsResults(results)
 		{
 			$("#divSpinner").show();
@@ -2221,13 +2230,13 @@ async function loadSiteLocations(site) {
 						.append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.selldepthmeasureunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
 						.append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
 						.append((res.aquifername == null ? "" : "<br><span>Screened Unit: " + getLocalAquifer(res.AquiferName) + "</span><br>"))
-						/* .append("<span>Barometric Efficiency: " + (res.BaroEfficiency == null ? "" : res.BaroEfficiency) + "</span><br>")
-						.append("<span>Started: " + (res.BaroEfficiencyStart == null ? "" : new Date(res.BaroEfficiencyStart).toLocaleDateString()) + "</span><br><br>") */
+						// .append("<span>Barometric Efficiency: " + (res.BaroEfficiency == null ? "" : res.BaroEfficiency) + "</span><br>")
+						//.append("<span>Started: " + (res.BaroEfficiencyStart == null ? "" : new Date(res.BaroEfficiencyStart).toLocaleDateString()) + "</span><br><br>") 
 						.append((res.notes == null ? "" : "<br><span>Notes: " + res.notes + "</span>"))
 						.append("<br><span>Note Log<div id='locNotes" + res.altlocationid + "' style='max-height:200px;overflow:auto;'><table class='resultsTable tablesorter' id='noteTable" + res.altlocationid + "'><tr class='huntTableHeader'><th class='tcol1' style='border:1px solid black;'>Date</th><th class='tcol2' style='border:1px solid black;'>Note</th></tr></table></div>")
 						.append("<br><hr>")
 						
-						.append((res.linklithologiclog != null && res.linklithologiclog.length > 0 ? "<br><br><span><a href='" + res.linklithologiclog + "' target='_blank'>Lithologic Log</a></span>" : ""))
+						.append((res.linklithologiclog != null && res.linklithologiclog.length > 0 ? "<br><br><span><a href='" + res.linklithologiclog + "' target='_blank'>Lithologic Log-2</a></span>" : ""))
 						
 						.append((res.linkgeophysicallog != null && res.linkgeophysicallog.length > 0 ? "<br><span><a href='" + res.linkgeophysicallog + "' target='_blank'>Geophysical Log</a></span>" : ""))
 						
@@ -2235,6 +2244,7 @@ async function loadSiteLocations(site) {
 					)
 				)
 			}
+			
 			
 			locIDs = locIDs.slice(0, -1);
 			flowLocIDs = flowLocIDs.slice(0, -1);
@@ -2287,32 +2297,31 @@ async function loadSiteLocations(site) {
 			qLith.groupByFieldsForStatistics = ["siteno"];
 
 			console.log(qLith);			
-fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_lithology?' + new URLSearchParams({
-        select: 'minfrom:lithologydepthfrom.min(),maxto:lithologydepthto.max(),maxunit:lithologydepthfromunit.max()',
-        siteno: `in.(${locIDs})`,
-        order: 'siteno'
-    }), {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(handleLithResults)
-    .catch(error => {
-        console.error('Error fetching lithology data:', error);
-    });
+				fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_lithology?' + new URLSearchParams({
+					select: 'minfrom:lithologydepthfrom.min(),maxto:lithologydepthto.max(),maxunit:lithologydepthfromunit.max()',
+					siteno: `in.(${locIDs})`,
+					order: 'siteno'
+				}), {
+					method: 'GET',
+					headers: {
+						'Accept': 'application/json',
+					}
+				})
+				.then(response => {
+					if (!response.ok) {
+						throw new Error(`HTTP error! status: ${response.status}`);
+					}
+					return response.json();
+				})
+				.then(handleLithResults)
+				.catch(error => {
+					console.error('Error fetching lithology data:', error);
+				});
 
-			/* function handleLithErrors2(error)
-			{
-				console.log("There was an error in the second arcgis server 'handleLith' query. See next line for details.");
-				console.log(error);
-			} */
+			// function handleLithErrors2(error) {
+			//	console.log("There was an error in the second arcgis server 'handleLith' query. See next line for details.");
+			//	console.log(error);
+			//} 
 
 			let qtGraph = new QueryTask(msReadings);
 			let qGraph = new Query();
@@ -2342,69 +2351,70 @@ fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_lithology?' + ne
 			$("#divSpinner").show();
 			console.log("flow location ids = "+flowLocIDs);
 			//promises = new all([qtGraph.execute(qGraph, handleMultiGraphResults, handleMultiGraphError), getFlowData(flowLocIDs, "daily", false),
-fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes?' + new URLSearchParams({
-    select: '*',
-    order: 'datetime.desc',
-    typeid: `in.(${locIDs})`,
-    type: 'eq.L'
-}), {
-    method: 'GET',
-    headers: {
-        'Accept': 'application/json',
-    }
-})
-.then(response => {
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-})
-.then(data => {
-    // Transform the data to match the expected format
-    const transformedData = {
-        features: data.map(item => ({
-            attributes: item
-        }))
-    };
-    handleMultiNotesResults(transformedData);
-})
-.catch(error => {
-    console.error('Error fetching notes:', error);
-});
+				fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes?' + new URLSearchParams({
+					select: '*',
+					order: 'datetime.desc',
+					typeid: `in.(${locIDs})`,
+					type: 'eq.L'
+				}), {
+					method: 'GET',
+					headers: {
+						'Accept': 'application/json',
+					}
+				})
+				.then(response => {
+					if (!response.ok) {
+						throw new Error(`HTTP error! status: ${response.status}`);
+					}
+					return response.json();
+				})
+				.then(data => {
+					// Transform the data to match the expected format
+					const transformedData = {
+						features: data.map(item => ({
+							attributes: item
+						}))
+					};
+					handleMultiNotesResults(transformedData);
+				})
+				.catch(error => {
+					console.error('Error fetching notes:', error);
+				});
 			promises.then(graphingDone);
 			//qtNotes.execute(qNotes, handleMultiNotesResults, handleNotesErrors)]);
 			fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes?' + new URLSearchParams({
-    select: '*',
-    order: 'datetime.desc',
-    typeid: `in.(${locIDs})`,
-    type: 'eq.L'
-}), {
-    method: 'GET',
-    headers: {
-        'Accept': 'application/json',
-    }
-})
-.then(response => {
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-})
-.then(data => {
-    // Transform the data to match the expected format
-    const transformedData = {
-        features: data.map(item => ({
-            attributes: item
-        }))
-    };
-    handleMultiNotesResults(transformedData);
-})
-.catch(error => {
-    console.error('Error fetching notes:', error);
-});
+				select: '*',
+				order: 'datetime.desc',
+				typeid: `in.(${locIDs})`,
+				type: 'eq.L'
+			}), {
+				method: 'GET',
+				headers: {
+					'Accept': 'application/json',
+				}
+			})
+			.then(response => {
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`);
+				}
+				return response.json();
+			})
+			.then(data => {
+				// Transform the data to match the expected format
+				const transformedData = {
+					features: data.map(item => ({
+						attributes: item
+					}))
+				};
+				handleMultiNotesResults(transformedData);
+			})
+			.catch(error => {
+				console.error('Error fetching notes:', error);
+			});
 			//$('.cd-panel').addClass('is-visible');
 			resultsExpand.expand();
 		}
+		*/
 		
 		/* function handleLocsError(error)
 		{
@@ -2612,13 +2622,17 @@ function getAllSitesAndLocs() {
 
 
 function handleqSiteResults(results) {
-    console.log("you go");
     console.log(results);
     var siteIDs = "";
     var res = results.features;
 
+	console.log(results.features[0].shape);
+	view.goTo({target:[res[0].longitude, res[0].latitude], zoom: 10})
+
+
     // Build the expression using WFS ID format
-    const quotedSiteExpression = res.map(r => `__esri_wfs_id__='ugs_gw_sites.${r.objectid}'`).join(' OR ');
+    //const quotedSiteExpression = res.map(r => `objectid=ugs_gw_sites.${r.objectid}`).join(' OR ');
+	const quotedSiteExpression = res.map(r => `__esri_wfs_id__='ugs_gw_sites.${r.objectid}'`).join(' OR ');
     console.log("site area id's expression: " + quotedSiteExpression);
 
     var slyr = map.findLayerById('waterareas');
@@ -2626,8 +2640,8 @@ function handleqSiteResults(results) {
 
     if (res.length > 0) {
         console.log(llyr);
+		llyr.definitionExpression = "1=2";
         slyr.definitionExpression = quotedSiteExpression;
-        llyr.definitionExpression = "1=2";
         loadComplaintTable(res, "site", true);
         toggleTableDivVisibility();
     } else {
@@ -2790,17 +2804,19 @@ function handleqLocsResults(results) {
 			//$('#btnSelAll:not(.bound)').addClass('bound').on("click", selectElementContents);
 		}
 		
-		// comment out?  not used now? (only referenced from row click above^)
+		// only referenced from row click above^
+		// when user clicks on a table result site (or area), show results in the results pane
+		// this function is called when a user clicks on a row in the results table
 		function compPicked(evt)
 		{
-
 			var id = evt.target.parentElement.cells[0].textContent;
 			var action = evt.target.parentElement.cells[1].textContent;
 			resultsExpand.expand();  // open results pane
+			console.log('id: '+id);
 			console.log('action: '+action);
 			
 			if(action == "l")
-				LoadLocationData(id);
+				LoadLocationData(id);     //pretty sure this no longer works
 			else if(action == "s")
 				LoadSiteAreaData(id);
 		}
