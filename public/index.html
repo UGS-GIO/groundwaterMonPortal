@@ -2047,8 +2047,9 @@ function handleGraphResults(results) {
 			}
 		});
 		
-	
+// fires when clicking site area from results table	
 function LoadSiteAreaData(siteID) {
+	console.log('loadSiteAreaData');
     $("#divSpinner").show();
     const siteUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_sites';
     const notesUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes';
@@ -2084,11 +2085,12 @@ function LoadSiteAreaData(siteID) {
 function handleSiteResults(results)
 {
 	console.log(results);
-	var res = results[0].features;
-	gl.site = res;
-	console.log(res[0].attributes);
-	if (res[0].attributes){
-		res = res[0].attributes;
+	console.log(results[0]);
+	var res = results[0];
+	//gl.site = res;
+	console.log(res[0]);
+	if (res[0]){
+		res = res[0]
 		view.goTo({target:[res.longitude, res.latitude], zoom:12})
 		$("#pnlTitle").empty();
 		if(res.linkadditionalinfo != null && res.linkadditionalinfo.length > 0)
