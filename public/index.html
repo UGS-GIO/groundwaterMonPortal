@@ -215,13 +215,16 @@ require([
 	"esri/tasks/QueryTask",
 	"esri/PopupTemplate",
 	"esri/widgets/Legend",
+	"esri/geometry/Extent",
+  	"esri/geometry/Point",
+	"esri/geometry/geometryEngine",
 	"esri/rest/support/StatisticDefinition",
 	"dojo",  // delete all dojo.create etc, use jquery and delete these TWO (dojo & dom-construct)
 	"dojo/dom-construct",
 	"dojo/promise/all",
 	"dojo/on"
 ], (
-	Map, MapView, FeatureLayer, WFSLayer, WFSUtils, UniqueValueRenderer, SimpleMarkerSymbol, Expand, BasemapGallery, Search, query, Query, QueryTask, PopupTemplate, Legend, StatisticDefinition, dojo, domConstruct, all, on
+	Map, MapView, FeatureLayer, WFSLayer, WFSUtils, UniqueValueRenderer, SimpleMarkerSymbol, Expand, BasemapGallery, Search, query, Query, QueryTask, PopupTemplate, Legend, Extent, Point, geometryEngine, StatisticDefinition, dojo, domConstruct, all, on
 	) => {
 
 	var gl = {};
@@ -307,7 +310,7 @@ require([
 
 	var areaLabel = {
 		labelExpressionInfo: { expression: "$feature.name" },
-		labelPlacement: "below-center",
+		labelPlacement: "always-horizontal",  //"below-center" gives error?  why?
 		maxScale: 0,   // zoomed all the way in = 0
   		minScale: 4000000,  // 4000000 (to hide on startup)
 		symbol: {
@@ -695,6 +698,13 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
   // Wait for all promises to resolve
   return Promise.all(promises)
     .then(results => {
+	  var sitename = '';
+	  if (results[0].split(',')[1]) {
+		var sitename = results[0].split(',')[1];
+		var sitename2 = sitename.split(/\r?\n|\r/)[0];
+		//console.log(sitename2);
+	  }
+
       // Combine results from all wells, adding a separator between wells if needed
       const csvContent = results.join('\n-------------------\n');
       
@@ -711,7 +721,8 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
       if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `groundwater_data_${new Date().toISOString()}.csv`);
+		const filename = 'gw_data_SITE'+sitename2+'_'+new Date().toISOString()+'.csv';
+        link.setAttribute("download", filename);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -782,17 +793,16 @@ $("#btnDownloadTable").click(function() {
     });
 });
 
-	/*
-	function enterKeyPressed(event) {
-		if (event.keyCode == 13) {
-			console.log("Enter key is pressed");
-			doSearch();
-		} else {
-			return false;
-		}
-	} 
-	*/
-		
+/*
+function enterKeyPressed(event) {
+	if (event.keyCode == 13) {
+		console.log("Enter key is pressed");
+		doSearch();
+	} else {
+		return false;
+	}
+} 
+*/
 	
 //fix: hard code these options?  Or at least make the option box a calcite option box
 
@@ -954,6 +964,7 @@ function handleComboResults(results)
 		$("#locationTypeSelect").trigger('change.select2');   // what does this do?!!!
 		// use "AltLocationContext" instead of network name?
 		/*
+		// delete this? when you're sure they wont want to revert'
 		switch(n.target.value) {
 			case "1":
 				var sql = "WLNetworkName = 'Snake Valley'";
@@ -1154,8 +1165,8 @@ async function LoadLocationData(locID) {
     }
 }
 
-
-// called when user clicks directly on a site
+// called when user clicks on row in table results (for an individual site)
+// does it fire in other instances?// called when user clicks directly on a site
 // OR on advanced location search results table result
 function handleLocResults(results) {
 	console.log('HANDLE LOC RESULTS');
@@ -1170,7 +1181,7 @@ function handleLocResults(results) {
     gl.locs = res;
     res = res[0];
 	console.log(res);
-	view.goTo({target:[res.longitude, res.latitude]})
+	view.goTo({target:[res.longitude, res.latitude], zoom:12})
 
     $("#pnlTitle").empty();
     $("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
@@ -2040,10 +2051,10 @@ function handleGraphResults(results) {
 			}
 		});
 		
-	
+// fires when clicking site area from results table	
 function LoadSiteAreaData(siteID) {
+	console.log('loadSiteAreaData');
     $("#divSpinner").show();
-
     const siteUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_sites';
     const notesUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_notes';
 
@@ -2081,12 +2092,13 @@ function handleSiteResults(results)
 {
 	console.log('HANDLE SITE RESULTS FUNCTION');
 	console.log(results);
-	var res = results[0].features;
-	//gl.site = res;   // part of old code? not sure where it was used.
-	console.log(res[0].attributes);
-	if (res[0].attributes){
-		res = res[0].attributes;
-		//console.log(res);
+	console.log(results[0]);
+	var res = results[0];
+	//gl.site = res;
+	console.log(res[0]);
+	if (res[0]){
+		res = res[0]
+		view.goTo({target:[res.longitude, res.latitude], zoom:12})
 		$("#pnlTitle").empty();
 		if(res.linkadditionalinfo != null && res.linkadditionalinfo.length > 0)
 			$("#pnlTitle").append("Site: <a href='http://" + res.linkadditionalinfo + "' target='_blank' class='aLight'>" + res.name + "</a>");
@@ -2539,7 +2551,7 @@ async function doSearch() {
 			console.log(error);
 		} */
 		
-	function getSitesAndLocs(siteIDs, locIDs) {
+
 	function getSitesAndLocs(siteIDs, locIDs) {
     // Fetch sites data
     fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_sites?' + new URLSearchParams({
@@ -2593,7 +2605,7 @@ async function doSearch() {
         console.error('Error fetching sites and locations data:', error);
     });
 }
-}
+
 		
 function handleSiteLocSearch(results) {
     var sites = results[0];
@@ -2616,8 +2628,9 @@ function getAllSitesAndLocs() {
     .catch(error => console.error('Error fetching sites and locations:', error));
 }
 
-
+// results for site AREA (polygons) searches?
 function handleqSiteResults(results) {
+    //console.log("you go");
     console.log(results);
     var siteIDs = "";
     var res = results.features;
@@ -2635,15 +2648,38 @@ function handleqSiteResults(results) {
     var llyr = map.findLayerById('well-spring-locations');
 
     if (res.length > 0) {
-        console.log(llyr);
-		llyr.definitionExpression = "1=2";
         slyr.definitionExpression = quotedSiteExpression;
+        llyr.definitionExpression = "1=2";
         loadComplaintTable(res, "site", true);
         toggleTableDivVisibility();
     } else {
         console.log("no site areas matching query");
         slyr.definitionExpression = "1=2";
     }
+
+	if (res.length == 1) {
+		view.goTo({target:[res[0].longitude, res[0].latitude], zoom: 10});
+	} else if (res.length > 1) {
+		view.goTo(getExtent(res).expand(1.5)); // Adjust the zoom level as needed
+	}
+}
+
+function getExtent(features){
+	//console.log(features);
+	const points = features.map(coord => {
+      return new Point({
+        latitude: coord.latitude,
+        longitude: coord.longitude,
+        spatialReference: view.spatialReference
+      });
+    });
+	//console.log(points);
+
+	// Compute the extent of the points
+    const unionExtent = geometryEngine.union(points).extent;
+	//console.log(unionExtent);
+	return unionExtent;
+	// use with view.goTo(unionExtent.expand(1.5)); 
 }
 	
 	/* function handleqSiteError(error)
@@ -2651,6 +2687,7 @@ function handleqSiteResults(results) {
 		console.log("There was an error: msg given was, "+ error);
 	} */
 		
+// for location ID searches?	
 function handleqLocsResults(results) {
     console.log(results);
     var res = results.features;
@@ -2669,13 +2706,19 @@ function handleqLocsResults(results) {
     } else {
         llyr.definitionExpression = '1=2';
     }
+
+	if (res.length == 1) {
+		view.goTo({target:[res[0].longitude, res[0].latitude], zoom: 10});
+	} else if (res.length > 1) {
+		view.goTo(getExtent(res).expand(1.5)); // Adjust the zoom level as needed
+	}
     
     //console.log("Location layer definition:", llyr.definitionExpression);
     //console.log("Site layer definition:", slyr.definitionExpression);
 	//console.log("layer", llyr);
 }
-		/* function handleqLocsError(error)
-		{
+		// function handleqLocsError(error)
+		/*{
 			console.log(error);
 		} */
 		
@@ -2800,9 +2843,7 @@ function handleqLocsResults(results) {
 			//$('#btnSelAll:not(.bound)').addClass('bound').on("click", selectElementContents);
 		}
 		
-		// only referenced from row click above^
-		// when user clicks on a table result site (or area), show results in the results pane
-		// this function is called when a user clicks on a row in the results table
+		//Triggered when user clicks on a row in the results table
 		function compPicked(evt)
 		{
 			var id = evt.target.parentElement.cells[0].textContent;
@@ -2830,6 +2871,7 @@ function handleqLocsResults(results) {
 			$("#siteName").val("");
 			$("#locationName").val("");
 			
+			view.goTo({target:[-111.3, 39.4], zoom: 7});
 			var slyr = map.findLayerById('waterareas');
 			var llyr = map.findLayerById('well-spring-locations');
 			llyr.definitionExpression = "display = '1'";
@@ -2864,16 +2906,15 @@ function handleqLocsResults(results) {
 				return checked.slice(0, checked.length - 1);
 		}
 		
-
-		
-/* 		// close the results panel on click
+		// close the results panel on click
+		/* 
 		$('.cd-panel').on('click', function(event){
 			if( $(event.target).is('.cd-panel') || $(event.target).is('.cd-panel-close') ) { 
 				//$('.cd-panel').removeClass('is-visible');
 				event.preventDefault();
 			}
-		}); */
-
+		}); 
+		*/
 
 $("#helpDiv").show();
 
