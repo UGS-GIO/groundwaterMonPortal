@@ -1227,7 +1227,7 @@ function appendLocationContent(res, imageUrl) {
         .append((res.wrnum == null ? "" : "<br><span>Water Rights Number: " + res.wrnum + "</span><br>"))
         .append((res.win == null ? "" : "<br><span>WIN: <a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
         .append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure.toFixed(1) + "</span><br>"))
-        .append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
+        .append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + " ft.</span><br>"))
         .append("<br><span id='si'>Screened Interval</span><br>")
         .append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
         .append((res.aquifername == null ? "" : "<br><span>Screened Unit: " + getLocalAquifer(res.aquifername) + "</span><br>"))
@@ -2512,44 +2512,44 @@ async function doSearch() {
   }
 }
 		
-		function handleP2SWResults(results)
+	function handleP2SWResults(results)
+	{
+		var res = results.features;
+		for(var i = 0; i < res.length; i++)
 		{
-			var res = results.features;
-			for(var i = 0; i < res.length; i++)
-			{
-				var attr = res[i].attributes;
-				if(attr.ItemType == "L")
-					locIDs += attr.ItemID + ", ";
-				else
-					siteIDs += attr.ItemID + ", ";
-			}
-			locIDs = locIDs.slice(0, -2);
-			siteIDs = siteIDs.slice(0, -2);
-			
-			if(locIDs.length <= 0 && siteIDs.length <= 0)
-			{
-				alert("No search results returned.");
-				return;
-			}
-
-			var slyr = map.findLayerById('waterareas');
-			var llyr = map.findLayerById('well-spring-locations');
-			if(locIDs.length > 0)
-				llyr.definitionExpression = "objectid IN (" + locIDs + ")";
+			var attr = res[i].attributes;
+			if(attr.ItemType == "L")
+				locIDs += attr.ItemID + ", ";
 			else
-				llyr.definitionExpression = "1=2";
-			if(siteIDs.length > 0)
-				slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
-			else
-				slyr.definitionExpression = "1=2";
-			
-			getSitesAndLocs(siteIDs, locIDs);
+				siteIDs += attr.ItemID + ", ";
 		}
+		locIDs = locIDs.slice(0, -2);
+		siteIDs = siteIDs.slice(0, -2);
 		
-		/* function handleP2SWError(error)
+		if(locIDs.length <= 0 && siteIDs.length <= 0)
 		{
-			console.log(error);
-		} */
+			alert("No search results returned.");
+			return;
+		}
+
+		var slyr = map.findLayerById('waterareas');
+		var llyr = map.findLayerById('well-spring-locations');
+		if(locIDs.length > 0)
+			llyr.definitionExpression = "objectid IN (" + locIDs + ")";
+		else
+			llyr.definitionExpression = "1=2";
+		if(siteIDs.length > 0)
+			slyr.definitionExpression = "objectid IN (" + siteIDs + ")";
+		else
+			slyr.definitionExpression = "1=2";
+		
+		getSitesAndLocs(siteIDs, locIDs);
+	}
+	
+	/* function handleP2SWError(error)
+	{
+		console.log(error);
+	} */
 		
 
 	function getSitesAndLocs(siteIDs, locIDs) {
@@ -2649,12 +2649,12 @@ function handleqSiteResults(results) {
 
     if (res.length > 0) {
         slyr.definitionExpression = quotedSiteExpression;
-        llyr.definitionExpression = "1=2";
+        //llyr.definitionExpression = "1=2";   //let's leave the sites visible (user might want to still see them, but perhaps in future we should create an expression to keep only springs in chosen site area polygon visib)
         loadComplaintTable(res, "site", true);
         toggleTableDivVisibility();
     } else {
         console.log("no site areas matching query");
-        slyr.definitionExpression = "1=2";
+        //slyr.definitionExpression = "1=2";
     }
 
 	if (res.length == 1) {
