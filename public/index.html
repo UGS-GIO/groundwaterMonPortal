@@ -702,7 +702,7 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
 	  if (results[0].split(',')[1]) {
 		var sitename = results[0].split(',')[1];
 		var sitename2 = sitename.split(/\r?\n|\r/)[0];
-		//console.log(sitename2);
+		console.log(results);
 	  }
 
       // Combine results from all wells, adding a separator between wells if needed
@@ -715,13 +715,16 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
 
       // Create a Blob with the CSV content
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+	  var freq = $('input[name="flowDownload"]:checked').val();  //gw_data
+	  //console.log('Frequency selected:', freq);
       
       // Create a download link and trigger the download
       const link = document.createElement("a");
       if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-		const filename = 'gw_data_SITE'+sitename2+'_'+new Date().toISOString()+'.csv';
+		const filename = 'gw_site-'+sitename2+'_freq-'+freq+'_'+new Date().toISOString()+'.csv';
         link.setAttribute("download", filename);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
@@ -1189,9 +1192,11 @@ function handleLocResults(results) {
     $("#site-location-content").empty();
     gl.locIDs = res.objectid;
     console.log(res.imagepath);
-	res.imagepath = res.imagepath || "no-image-available-new.png";
 
-    const imagePath = `images/${res.imagepath}`;
+	//res.imagepath = res.imagepath || "no-image-available-new.png";
+	var img = (res.imagepath) ? res.imagepath : "no-image-available-new.png";
+
+    const imagePath = 'images/'+img;
     const imageRef = window.firebaseRef(window.firebaseStorage, imagePath);
 
     window.firebaseGetDownloadURL(imageRef)
@@ -1201,7 +1206,7 @@ function handleLocResults(results) {
         })
         .catch((error) => {
             console.error('Error getting download URL:', error);
-            //const noImageUrl = "no-image-available-new.png";
+            const noImageUrl = "no-image-available-new.png";
             appendLocationContent(res, noImageUrl);
         })
         .finally(() => {
@@ -1227,7 +1232,7 @@ function appendLocationContent(res, imageUrl) {
         .append((res.wrnum == null ? "" : "<br><span>Water Rights Number: " + res.wrnum + "</span><br>"))
         .append((res.win == null ? "" : "<br><span>WIN: <a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
         .append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure.toFixed(1) + "</span><br>"))
-        .append((res.welldepth == null ? "" : "<br><span>Borehole Depth " + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + " ft.</span><br>"))
+        .append((res.welldepth == null ? "" : "<br><span>Borehole Depth (ft)" + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
         .append("<br><span id='si'>Screened Interval</span><br>")
         .append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
         .append((res.aquifername == null ? "" : "<br><span>Screened Unit: " + getLocalAquifer(res.aquifername) + "</span><br>"))
