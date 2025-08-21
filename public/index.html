@@ -42,7 +42,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 
 
-
     <style>
 
       html,
@@ -1131,7 +1130,7 @@ function handleNotesResults(results) {
 			console.log("Notes Error: ", error);
 		} */
 		
-async function LoadLocationData(locID) {
+async function LoadLocationData(locID, zoom) {
     console.log("Original locID:", locID);
     
 	// Extract just the numeric part
@@ -1162,7 +1161,7 @@ async function LoadLocationData(locID) {
             return;
         }
 
-        handleLocResults({ features: data });
+        handleLocResults({ features: data },zoom);
     } catch (error) {
         console.error('Error fetching location data:', error);
     }
@@ -1171,7 +1170,7 @@ async function LoadLocationData(locID) {
 // called when user clicks on row in table results (for an individual site)
 // does it fire in other instances?// called when user clicks directly on a site
 // OR on advanced location search results table result
-function handleLocResults(results) {
+function handleLocResults(results, zoom) {
 	console.log('HANDLE LOC RESULTS');
     console.log("handleLocResults", results);
     if (chart != null) {
@@ -1184,7 +1183,9 @@ function handleLocResults(results) {
     gl.locs = res;
     res = res[0];
 	console.log(res);
-	view.goTo({target:[res.longitude, res.latitude], zoom:12})
+	console.log(zoom);
+	if (zoom == 'yes'){view.goTo({target:[res.longitude, res.latitude], zoom:12})}
+	// var zoom is passed from click events. Needs to be no/false when user clicks on map, and yes when user clicks on search results talbe.
 
     $("#pnlTitle").empty();
     $("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
@@ -1318,16 +1319,27 @@ function continueLocationProcessing(res) {
             console.log("starting graph query task for well data");
             $(".divFlow").hide();
             
-            // Fetch water elevation data
-            const qGraph = {
-                select: 'readingdate, waterelevation',
-                order: 'readingdate',
-                locationid: `eq.${res.altlocationid}`
-            };
 
-            fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
-                .then(handleGraphResults)
-                .catch(error => console.error('Error fetching graph data:', error));
+            // Check for manual & fetch manual water level data
+            //if (res.manual === 1) {   // what is the field name for this?
+			console.log("Fetching manual water reading data");
+			const qGraph = {
+				select: 'readingdate, waterelevation',
+				order: 'readingdate',
+				locationid: `eq.${res.altlocationid}`
+			};
+
+			// First fetch manual data
+			fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph)
+				.then(manData => {
+					// Once we have manData, fetch the water elevation data
+					return fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
+						.then(graphData => {
+							// Call your handler with both datasets
+							handleGraphResults(graphData, manData);
+						});
+				})
+				.catch(error => console.error('Error fetching data:', error));
 
             // Check for and fetch conductivity data if available
             if (res.hascond === 1) {
@@ -1339,9 +1351,14 @@ function continueLocationProcessing(res) {
                 };
 
                 fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
-                    .then(additionalGraphResults)
+                    .then(  fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph) //switch for new
+							.then(additionalGraphResults)
+							.catch(error => console.error('Error fetching conductivity data:', error))
+					)
                     .catch(error => console.error('Error fetching conductivity data:', error));
             }
+
+
         }
     } else {
         console.log('NO ALTLOCATIONID!!! SHOULD THERE BE?');
@@ -1351,6 +1368,35 @@ function continueLocationProcessing(res) {
         $("#graph-content-flow").hide();
         $("#graph-options").hide();
     }
+
+	var chart = AmCharts.makeChart("chartdiv", {
+        // ... other chart properties
+        "dataProvider": [{
+            "category": "2023",
+            "value1": 100, // From dataset 1
+            "value2": 150  // From dataset 2
+        }, {
+            "category": "2024",
+            "value1": 120,
+            "value2": 180
+        }],
+        "graphs": [{
+            "valueField": "value1",
+            "type": "line",
+            "title": "Dataset 1"
+        }, {
+            "valueField": "value2",
+            "type": "line",
+            "title": "Dataset 2"
+        }]
+    });
+
+
+
+	function manualReadingGraphResults(data){
+		console.log("ADDING MANUAL READING DATA");
+		console.log(data);
+	}
 
     // Initialize date pickers if they exist
     if ($("#fromDate").length && $("#toDate").length) {
@@ -1393,108 +1439,109 @@ async function fetchPostgREST(endpoint, params) {
         }
 
         const data = await response.json();
-        console.log('Received data:', data);
+        //console.log('Received data:', data);
+		console.log("AJAX successfull");
         return data;
     } catch (error) {
         console.error('Fetch error:', error);
         throw error;
     }
-}
+} // end ajax/fetch data
 		
+
 		/* function handleLocError(error)
 		{
 			console.log("LocError: ", error);
-		}
-		 */	
+		} */
+		 	
 
+		//New poostgrest call
+		function getFlowData(id, type, hideSpin) {
+			$("#graph-content").empty().hide();
+			$("#graph-content-flow").empty().hide();
+			$("#graph-content-additional").empty().hide();
 
-		 //New poostgrest call
-		 function getFlowData(id, type, hideSpin) {
-    $("#graph-content").empty().hide();
-    $("#graph-content-flow").empty().hide();
-    $("#graph-content-additional").empty().hide();
+			if (!id) {
+				console.log("No flow well id provided. Aborting get_flow_data.");
+				$("#divSpinner").hide();
+				return;
+			}
 
-    if (!id) {
-        console.log("No flow well id provided. Aborting get_flow_data.");
-        $("#divSpinner").hide();
-        return;
-    }
+			if (type !== 'daily' && type !== 'monthly') {
+				console.error("Invalid type provided. Must be 'daily' or 'monthly'.");
+				$("#divSpinner").hide();
+				return;
+			}
 
-    if (type !== 'daily' && type !== 'monthly') {
-        console.error("Invalid type provided. Must be 'daily' or 'monthly'.");
-        $("#divSpinner").hide();
-        return;
-    }
+			// Ensure clean input
+			let sanitizedId;
+			if (typeof id === 'string') {
+				sanitizedId = id.replace(/'/g, "").trim();
+			} else if (typeof id === 'number') {
+				sanitizedId = id.toString();
+			} else if (Array.isArray(id)) {
+				sanitizedId = id.join(',');
+			} else {
+				console.error("Invalid id format provided to getFlowData:", typeof id, id);
+				$("#divSpinner").hide();
+				return;
+			}
 
-    // Ensure clean input
-    let sanitizedId;
-    if (typeof id === 'string') {
-        sanitizedId = id.replace(/'/g, "").trim();
-    } else if (typeof id === 'number') {
-        sanitizedId = id.toString();
-    } else if (Array.isArray(id)) {
-        sanitizedId = id.join(',');
-    } else {
-        console.error("Invalid id format provided to getFlowData:", typeof id, id);
-        $("#divSpinner").hide();
-        return;
-    }
+			console.log(`Fetching ${type} flow data for ID:`, sanitizedId);
 
-    console.log(`Fetching ${type} flow data for ID:`, sanitizedId);
+			// Construct the URL with query parameters
+			const url = new URL('https://ugs-koop-umfdxaxiyq-wm.a.run.app/rpc/get_flow_data');
+			url.searchParams.append('p_loc_ids', sanitizedId);
+			url.searchParams.append('p_type', type);
 
-    // Construct the URL with query parameters
-    const url = new URL('https://ugs-koop-umfdxaxiyq-wm.a.run.app/rpc/get_flow_data');
-    url.searchParams.append('p_loc_ids', sanitizedId);
-    url.searchParams.append('p_type', type);
+			console.log("Fetching data from URL:", url.toString());
 
-    console.log("Fetching data from URL:", url.toString());
+			fetch(url.toString(), {
+				method: 'GET',
+				headers: {
+					'Accept': 'application/json',
+				}
+			})
+			.then(response => {
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`);
+				}
+				return response.json();
+			})
+			.then(data => {
+				console.log("Raw data received:", data);
 
-    fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log("Raw data received:", data);
+				if (data && Array.isArray(data) && data.length > 0) {
+					const transformedData = data.map(item => ({
+						flowdate: item.flow_date,
+						discharge: parseFloat(item.discharge)
+					}));
 
-        if (data && Array.isArray(data) && data.length > 0) {
-            const transformedData = data.map(item => ({
-                flowdate: item.flow_date,
-                discharge: parseFloat(item.discharge)
-            }));
-
-            graphFlowData(transformedData, hideSpin);
-            $("#graph-content-flow").show();
-            $("#graph-options").show();
-            $("#csv-download").show();
-            $("#graph-message").hide();
-        } else {
-            console.log("No data returned");
-            $("#graph-content-flow").hide();
-            $("#graph-options").hide();
-            $("#csv-download").hide();
-            $("#graph-message").show();
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching flow data:', error);
-        $("#graph-content-flow").hide();
-        $("#graph-options").hide();
-        $("#graph-message").show().text("Error loading flow data");
-    })
-    .finally(() => {
-        if (hideSpin) {
-            $("#divSpinner").hide();
-        }
-    });
-}
+					graphFlowData(transformedData, hideSpin);
+					$("#graph-content-flow").show();
+					$("#graph-options").show();
+					$("#csv-download").show();
+					$("#graph-message").hide();
+				} else {
+					console.log("No data returned");
+					$("#graph-content-flow").hide();
+					$("#graph-options").hide();
+					$("#csv-download").hide();
+					$("#graph-message").show();
+				}
+			})
+			.catch(error => {
+				console.error('Error fetching flow data:', error);
+				$("#graph-content-flow").hide();
+				$("#graph-options").hide();
+				$("#graph-message").show().text("Error loading flow data");
+			})
+			.finally(() => {
+				if (hideSpin) {
+					$("#divSpinner").hide();
+				}
+			});
+		}	// end getFlowData
 
 		function graphFlowDataNew(data, hideSpin)
 		{
@@ -1661,6 +1708,7 @@ async function fetchPostgREST(endpoint, params) {
 			chartFlow.dataProvider = chartData;
 			chartFlow.validateData();
 			chartFlow.animateAgain();
+
 			
 			// if there's no data hide the graph & download
 			if(chartFlow.dataProvider.length > 0)
@@ -1689,11 +1737,122 @@ async function fetchPostgREST(endpoint, params) {
 			}
 			console.log("finished graphFlowData()");
 			//console.log(chartData);
+	}
+		
+
+function findClosestTimeMatch(primaryDateTime, secondaryItems) {
+    if (secondaryItems.length === 1) {
+        return secondaryItems[0];
+    }
+    
+    var primaryTime = new Date(primaryDateTime);
+    var closestItem = secondaryItems[0];
+    var closestTimeDiff = Math.abs(new Date(secondaryItems[0].readingdate) - primaryTime);
+    
+    for (var i = 1; i < secondaryItems.length; i++) {
+        var timeDiff = Math.abs(new Date(secondaryItems[i].readingdate) - primaryTime);
+        if (timeDiff < closestTimeDiff) {
+            closestTimeDiff = timeDiff;
+            closestItem = secondaryItems[i];
+        }
+    }
+    
+    return closestItem;
+}
+
+
+// Function to merge datasets for AMCharts
+function mergeWaterLevelArrays(primaryArray, secondaryArray) {
+		function getDateOnly(dateTimeString) {
+			if (dateTimeString){
+				return dateTimeString.split('T')[0];
+			}
 		}
 		
-function handleGraphResults(results) {
+		//console.log(secondaryArray);
+		var secondaryDateMap = {};
+		secondaryArray.forEach(function(item) {
+			if (item.waterelevation !== null && item.waterelevation !== undefined) {
+				var dateKey = getDateOnly(item.readingdate);
+				if (!secondaryDateMap[dateKey]) {
+					secondaryDateMap[dateKey] = item.waterelevation;
+				}
+			}
+		});
+		
+		return primaryArray.map(function(primaryItem) {
+			var primaryDateKey = getDateOnly(primaryItem.readingdate);
+			var result = {
+				readingdate: primaryItem.readingdate,
+				waterelevation: primaryItem.waterelevation
+			};
+			
+			if (secondaryDateMap[primaryDateKey] !== undefined) {
+				result.manualwaterlevel = secondaryDateMap[primaryDateKey];
+
+				// Find the closest time match
+				//var bestMatch = findClosestTimeMatch(primaryItem.readingdate, matchingSecondaryItems);
+            	//mergedItem.manualwaterlevel = bestMatch.manualwaterlevel;
+			}
+			
+			return result;
+		});
+}
+
+
+// helper function not currently used, but might need soon.
+function convertToLDate(array) {
+    return array.map(item => {
+        // Create a Date object from the ISO 8601 string
+        const date = new Date(item.readingdate);
+		const longFormatDate = date.toISOString().split('T')[0];
+
+        return {
+            ...item, // Copy all other properties from the original object
+            readingdate: longFormatDate // Overwrite with the new long format date string
+        };
+    });
+}
+
+function combineArraysForChart(array1, array2) {
+	var combinedData = [];
+	
+	// Add all dates from both arrays to create a complete timeline
+	var allDates = [];
+	
+	// Process Array1 dates
+	array1.forEach(function(item) {
+		allDates.push({
+			date: item.readingdate,
+			manvalue: item.waterelevation,
+			value: null
+		});
+	});
+	
+	// Process Array2 dates - convert date strings to proper format
+	array2.forEach(function(item) {
+		// Create Date object from the string and convert to ISO format
+		var dateObj = new Date(item.date);
+		var isoString = dateObj.toISOString().slice(0, 19); // Remove milliseconds and Z
+		
+		allDates.push({
+			date: isoString,
+			manvalue: null,
+			value: item.value
+		});
+	});
+	
+	// Sort by date
+	allDates.sort(function(a, b) {
+		return new Date(a.date) - new Date(b.date);
+	});
+	
+	return allDates;
+}
+
+
+function handleGraphResults(results, mresults) {
     console.log("Starting handleGraphResults function - water elevation am chart FOR WELLS");
-    console.log("Input results:", results);
 
     $("#graph-content").empty().hide();
     $("#graph-content-flow").empty().hide();
@@ -1757,9 +1916,19 @@ function handleGraphResults(results) {
         return;
     }
 
+    //console.log("manual results:", mresults);
+	//console.log("Input results:", chartData);
+
+	//combine the two grraph results.
+	//var newchartData = mergeWaterLevelArrays(chartData, mresults);
+	var newchartData = combineArraysForChart(mresults, chartData);
+	//console.log(newchartData);
+
     // Chart configuration
     var chartConfig = {
         "type": "serial",
+		"dataProvider": newchartData,
+        "categoryField": "date",
         "listeners": [{
             "event": "zoomed",
             "method": handleZoom
@@ -1781,16 +1950,29 @@ function handleGraphResults(results) {
             {
                 "balloonText": "[[category]] : [[value]]",
                 "bullet": "round",
-                "bulletBorderAlpha": 1,
-                "bulletColor": "#6C92B7",
-                "bulletSize": 5,
+                //"bulletBorderAlpha": 1,
+                "bulletColor": "#ffffff",
+				"bulletBorderColor": "#ffffff",
+                "bulletSize": 1,
                 "lineThickness": 1,
                 "lineColor": "#6C92B7",
                 "title": res.locationname,
                 "useLineColorForBulletBorder": true,
                 "valueField": "value",
-                "hideBulletsCount": 50
-            }
+				"type": "smoothedLine",
+                "hideBulletsCount": 100
+            },{
+				"id": "manualvalues-dots",
+				"valueField": "manvalue",
+				"type": "line",
+				"lineAlpha": 0,
+				"bullet": "square",
+				"bulletSize": 8,
+				"bulletColor": "#6C92B7",
+				"bulletBorderThickness": 2,
+				"bulletBorderColor": "#ffffff",
+				"balloonText": "manualvalues: [[manvalue]] ft<br/>Date: [[date]]"
+			}
         ],
         "chartScrollbar": {
             "graph": "g1",
@@ -1836,9 +2018,7 @@ function handleGraphResults(results) {
                 "size": 15,
                 "text": "Water Elevation Chart"
             }
-        ],
-        "dataProvider": chartData,
-        "categoryField": "date"
+        ]
     };
 
     console.log("Final chart configuration:", chartConfig);
@@ -1875,186 +2055,186 @@ function handleGraphResults(results) {
     }
 }
 
-		// add second well results for Lucy
-		function additionalGraphResults(results)
-		{
-			console.log("ADDING an additional table for lucy");
-			console.log(results);
-			if (results.features.length == 0){
-				console.log('if no data to graph, hide download');
-				$("#divSpinner").hide();
-				$("#csv-download").hide();
-				return;
-			}
-			var res = gl.loc[0].attributes;
-			chart = AmCharts.makeChart("graph-content-additional",
+// add second well results for Lucy
+function additionalGraphResults(results)
+{
+	console.log("ADDING an additional table for lucy");
+	console.log(results);
+	if (results.features.length == 0){
+		console.log('if no data to graph, hide download');
+		$("#divSpinner").hide();
+		$("#csv-download").hide();
+		return;
+	}
+	var res = gl.loc[0].attributes;
+	chart = AmCharts.makeChart("graph-content-additional",
+	{
+		"type":"serial",
+		"listeners": [{
+			"event": "zoomed",
+			"method": handleZoom
+		}],
+		"marginRight": 40,
+		"marginLeft": 40,
+		"autoMarginOffset": 20,
+		"categoryField":results.fields[0].name,
+		"mouseWheelScrollEnabled": true,
+		"mouseWheelZoomEnabled": true,
+		"theme":"light",
+		"creditsPosition": "bottom-right",
+		"categoryAxis": {
+			"gridPosition":"start",
+			"parseDates": true,
+			"minPeriod": "mm"
+		},
+		"trendLines":[],
+		"graphs": [
 			{
-				"type":"serial",
-				"listeners": [{
-					"event": "zoomed",
-					"method": handleZoom
-				}],
-				"marginRight": 40,
-				"marginLeft": 40,
-				"autoMarginOffset": 20,
-				"categoryField":results.fields[0].name,
-				"mouseWheelScrollEnabled": true,
-				"mouseWheelZoomEnabled": true,
-				"theme":"light",
-				"creditsPosition": "bottom-right",
-				"categoryAxis": {
-					"gridPosition":"start",
-					"parseDates": true,
-					"minPeriod": "mm"
-				},
-				"trendLines":[],
-				"graphs": [
-					{
-					"balloonText":"[[" + results.fields[0].name + "]] : [[value]]",
-					"bullet":"round",
-					"bulletBorderAlpha": 1,
-					"bulletColor": "#6C92B7",
-					"bulletSize": 5,
-					"lineThickness": 1,
-					"lineColor": "#6C92B7",
-					"title": "red line",
-					"useLineColorForBulletBorder": true,
-					"id":"Graph1",
-					"title":res.locationname,
-					// might have to match with data value
-					"valueField":results.fields[1].name,
-					"hideBulletsCount": 50
-					}
-				],
-				"chartScrollbar": {
-					"graph":"Graph1",
-					"updateOnReleaseOnly": true,
-					"oppositeAxis":false,
-					"offset":25,
-					"scrollbarHeight": 20,
-					"backgroundColor": "#6C92B7",
-					"selectedBackgroundColor": "6C92B7",
-					"graphFillAlpha": 0,
-					"graphLineAlpha": 0.5,
-					"selectedGraphFillAlpha": 0,
-					"selectedGraphLineAlpha": 1,
-					"autoGridCount":false,
-					"dragIcon": "dragIconRectSmall",
-					"dragIconHeight": 25,
-					"color":"#FFFFFF"
-				},
-				"chartCursor": {
-					"valueLineEnabled": false,
-					"valueLineBalloonEnabled": false,
-					"cursorAlpha":1,
-					"cursorColor":"#333333",
-					"valueLineAlpha":1,
-					"valueZoomable":true,
-					"categoryBalloonDateFormat":"M/DD/YY L:NN A"
-				},
-				"guides":[],
-				"valueAxes":[
-					{
-						"id":"ValueAxis-1",
-						"title":results.fields[1].alias + " (µS/cm)"
-					}
-				],
-				"allLabels":[],
-				"balloon": [],
-				"legend":{
-					"enabled":true,
-					"useGraphSettings":true,
-					"valueText":""
-				},
-				"export": {
-					"enabled": true
-				}
-				
-			});
-			
-			var chartData = [];
-			
-			results = results.features;
-			for(var i = 0; i < results.length; i++)
-			{
-				if(results[i].attributes.flowdate != null)
-				{
-					var dt = new Date(results[i].attributes.flowdate);
-					var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
-					dt = new Date(utc);
-					// note: these need to match exactly with the 'category field' and 'value field' defined above
-					chartData.push({flowdate: dt.toLocaleString(), discharge: results[i].attributes.discharge});
-				}
-				else
-				{
-					var dt = new Date(results[i].attributes.readingdate);
-					var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
-					dt = new Date(utc);
-					// note: these need to match exactly with the 'category field' and 'value field' defined above
-					chartData.push({readingdate: dt.toLocaleString(), conductivity: results[i].attributes.conductivity});
-				}
+			"balloonText":"[[" + results.fields[0].name + "]] : [[value]]",
+			"bullet":"round",
+			"bulletBorderAlpha": 1,
+			"bulletColor": "#6C92B7",
+			"bulletSize": 5,
+			"lineThickness": 1,
+			"lineColor": "#6C92B7",
+			"title": "red line",
+			"useLineColorForBulletBorder": true,
+			"id":"Graph1",
+			"title":res.locationname,
+			// might have to match with data value
+			"valueField":results.fields[1].name,
+			"hideBulletsCount": 50
 			}
-			
-			console.log("adding data to chart!");
-			//console.log(chartData);
-			chart.dataProvider = chartData;
-			chart.validateData();
-			chart.animateAgain();
-			
-			chart.addListener("rendered", zoomChart);
-
-			if(chart.dataProvider.length > 100)
-				zoomChart(chart);
-
-			if(results.length > 0)
+		],
+		"chartScrollbar": {
+			"graph":"Graph1",
+			"updateOnReleaseOnly": true,
+			"oppositeAxis":false,
+			"offset":25,
+			"scrollbarHeight": 20,
+			"backgroundColor": "#6C92B7",
+			"selectedBackgroundColor": "6C92B7",
+			"graphFillAlpha": 0,
+			"graphLineAlpha": 0.5,
+			"selectedGraphFillAlpha": 0,
+			"selectedGraphLineAlpha": 1,
+			"autoGridCount":false,
+			"dragIcon": "dragIconRectSmall",
+			"dragIconHeight": 25,
+			"color":"#FFFFFF"
+		},
+		"chartCursor": {
+			"valueLineEnabled": false,
+			"valueLineBalloonEnabled": false,
+			"cursorAlpha":1,
+			"cursorColor":"#333333",
+			"valueLineAlpha":1,
+			"valueZoomable":true,
+			"categoryBalloonDateFormat":"M/DD/YY L:NN A"
+		},
+		"guides":[],
+		"valueAxes":[
 			{
-				$("#graph-content-additional").show();
+				"id":"ValueAxis-1",
+				"title":results.fields[1].alias + " (µS/cm)"
 			}
-			else
-			{
-				$("#graph-content-additional").hide();
-			}
+		],
+		"allLabels":[],
+		"balloon": [],
+		"legend":{
+			"enabled":true,
+			"useGraphSettings":true,
+			"valueText":""
+		},
+		"export": {
+			"enabled": true
 		}
 		
-		function zoomChart(chrt) {
-			if(chrt.dataProvider != null)
-				chrt.zoomToIndexes(Math.floor(chrt.dataProvider.length / 2), chrt.dataProvider.length - 1);
-		}
-		
-		/* function handleGraphError(err)
+	});
+	
+	var chartData = [];
+	
+	results = results.features;
+	for(var i = 0; i < results.length; i++)
+	{
+		if(results[i].attributes.flowdate != null)
 		{
-			console.log(err);
-		} */
+			var dt = new Date(results[i].attributes.flowdate);
+			var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
+			dt = new Date(utc);
+			// note: these need to match exactly with the 'category field' and 'value field' defined above
+			chartData.push({flowdate: dt.toLocaleString(), discharge: results[i].attributes.discharge});
+		}
+		else
+		{
+			var dt = new Date(results[i].attributes.readingdate);
+			var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000)
+			dt = new Date(utc);
+			// note: these need to match exactly with the 'category field' and 'value field' defined above
+			chartData.push({readingdate: dt.toLocaleString(), conductivity: results[i].attributes.conductivity});
+		}
+	}
+	
+	console.log("adding data to chart!");
+	//console.log(chartData);
+	chart.dataProvider = chartData;
+	chart.validateData();
+	chart.animateAgain();
+	
+	chart.addListener("rendered", zoomChart);
+
+	if(chart.dataProvider.length > 100)
+		zoomChart(chart);
+
+	if(results.length > 0)
+	{
+		$("#graph-content-additional").show();
+	}
+	else
+	{
+		$("#graph-content-additional").hide();
+	}
+}
 		
-		$(".flow").change(function() {
-			$("#divSpinner").show();
-			if (window.flowIDs !== undefined && window.flowIDs !== null) {
-				// Handle different types of flowIDs
-				let cleanFlowIDs;
-				if (typeof window.flowIDs === 'string') {
-					cleanFlowIDs = window.flowIDs.replace(/'/g, "").trim();
-				} else if (typeof window.flowIDs === 'number') {
-					cleanFlowIDs = window.flowIDs.toString();
-				} else if (Array.isArray(window.flowIDs)) {
-					cleanFlowIDs = window.flowIDs.join(',');
-				} else {
-					console.error("Invalid flowIDs format:", window.flowIDs);
-					$("#divSpinner").hide();
-					return;
-				}
+function zoomChart(chrt) {
+	if(chrt.dataProvider != null)
+		chrt.zoomToIndexes(Math.floor(chrt.dataProvider.length / 2), chrt.dataProvider.length - 1);
+}
 
-				console.log("Processing flow toggle with ID:", cleanFlowIDs);
-				console.log("Selected type:", $(this).val());
+/* function handleGraphError(err)
+{
+	console.log(err);
+} */
 
-				getFlowData(cleanFlowIDs, $(this).val(), true);
-			} else {
-				console.error("No flow IDs available");
-				$("#divSpinner").hide();
-				$("#graph-message").show();
-				$("#graph-content-flow").hide();
-				$("#graph-options").hide();
-			}
-		});
+$(".flow").change(function() {
+	$("#divSpinner").show();
+	if (window.flowIDs !== undefined && window.flowIDs !== null) {
+		// Handle different types of flowIDs
+		let cleanFlowIDs;
+		if (typeof window.flowIDs === 'string') {
+			cleanFlowIDs = window.flowIDs.replace(/'/g, "").trim();
+		} else if (typeof window.flowIDs === 'number') {
+			cleanFlowIDs = window.flowIDs.toString();
+		} else if (Array.isArray(window.flowIDs)) {
+			cleanFlowIDs = window.flowIDs.join(',');
+		} else {
+			console.error("Invalid flowIDs format:", window.flowIDs);
+			$("#divSpinner").hide();
+			return;
+		}
+
+		console.log("Processing flow toggle with ID:", cleanFlowIDs);
+		console.log("Selected type:", $(this).val());
+
+		getFlowData(cleanFlowIDs, $(this).val(), true);
+	} else {
+		console.error("No flow IDs available");
+		$("#divSpinner").hide();
+		$("#graph-message").show();
+		$("#graph-content-flow").hide();
+		$("#graph-options").hide();
+	}
+});
 		
 // fires when clicking site area from results table	
 function LoadSiteAreaData(siteID) {
@@ -2854,11 +3034,11 @@ function handleqLocsResults(results) {
 			var id = evt.target.parentElement.cells[0].textContent;
 			var action = evt.target.parentElement.cells[1].textContent;
 			resultsExpand.expand();  // open results pane
-			console.log('id: '+id);
+			//console.log('id: '+id);
 			console.log('action: '+action);
 			
 			if(action == "l")
-				LoadLocationData(id);     //pretty sure this no longer works
+				LoadLocationData(id, 'yes');     
 			else if(action == "s")
 				LoadSiteAreaData(id);
 		}
