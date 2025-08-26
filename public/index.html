@@ -583,12 +583,12 @@ const locationsRenderer = new UniqueValueRenderer({
 		
 
 
+//   ---------------------------------------------------   more info function controls  --------------------------------------------------
 
-
-	//   ---------------------------------------------------   more info function controls  --------------------------------------------------
 // Function to download groundwater data
 function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
-  const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
+  //const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
+  const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data_plus_manual_data';
   const postgrestUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
 
   console.log('Initial wellIds:', wellIds);
@@ -1963,6 +1963,7 @@ function handleGraphResults(results, mresults) {
                 "hideBulletsCount": 100
             },{
 				"id": "manualvalues-dots",
+				"title": "manual reading values",
 				"valueField": "manvalue",
 				"type": "line",
 				"lineAlpha": 0,
