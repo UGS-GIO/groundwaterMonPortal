@@ -31,6 +31,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 	<script type="text/javascript" src="https://www.amcharts.com/lib/3/serial.js"></script>
 	<script type="text/javascript" src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
 
+	<link rel="stylesheet" href="https://esri.github.io/calcite-maps/dist/css/calcite-maps-arcgis-4.x.min-v0.10.css">
+
     <link rel="stylesheet" href="https://js.arcgis.com/4.21/esri/themes/light/main.css"/>
     <script src="https://js.arcgis.com/4.21/"></script>
 
@@ -39,7 +41,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.0.0-beta.63/calcite.css" />
     <script src="https://apis.google.com/js/client.js"></script>
-
 
 
     <style>
@@ -52,7 +53,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         width: 100%;
       }
       #viewDiv {
-        top:40px;
+        top:0px;
         bottom:0px;
         left: 0px;
         right: 0px;
@@ -68,7 +69,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       #searchwin {
         display: block;
         position: absolute;
-        top: 10px;
+        top: 60px;
         left: 60px;
       }
 
@@ -587,8 +588,8 @@ const locationsRenderer = new UniqueValueRenderer({
 
 // Function to download groundwater data
 function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
-  //const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
-  const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data_plus_manual_data';
+  const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
+  //const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data_plus_manual_data';
   const postgrestUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
 
   console.log('Initial wellIds:', wellIds);
@@ -1326,11 +1327,17 @@ function continueLocationProcessing(res) {
 			const qGraph = {
 				select: 'readingdate, waterelevation',
 				order: 'readingdate',
-				locationid: `eq.${res.altlocationid}`
+				locationid: `eq.${res.altlocationid}`,
+			};
+			const qGraph2 = {
+				select: 'readingdate, waterelevation',
+				order: 'readingdate',
+				locationid: `eq.${res.altlocationid}`,
+				datastatus: 'neq.rejected'
 			};
 
 			// First fetch manual data
-			fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph)
+			fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph2)
 				.then(manData => {
 					// Once we have manData, fetch the water elevation data
 					return fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
@@ -1963,13 +1970,13 @@ function handleGraphResults(results, mresults) {
                 "hideBulletsCount": 100
             },{
 				"id": "manualvalues-dots",
-				"title": "manual reading values",
+				"title": "elevation from manual measurement",
 				"valueField": "manvalue",
 				"type": "line",
 				"lineAlpha": 0,
 				"bullet": "square",
-				"bulletSize": 8,
-				"bulletColor": "#6C92B7",
+				"bulletSize": 5,
+				"bulletColor": "#FF0000",
 				"bulletBorderThickness": 2,
 				"bulletBorderColor": "#ffffff",
 				"balloonText": "manualvalues: [[manvalue]] ft<br/>Date: [[date]]"
@@ -2004,7 +2011,7 @@ function handleGraphResults(results, mresults) {
         "valueAxes": [
             {
                 "id": "ValueAxis-1",
-                "title": "Water Elevation (ft)"
+                "title": "Water Table Elevation (ft)"
             }
         ],
         "allLabels": [],
@@ -3119,7 +3126,18 @@ $("#helpDiv").show();
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-56QNLTH8"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
-		<div id="viewDiv"></div>
+
+	<div id="viewDiv"></div>
+
+	<!-- <nav class="navbar calcite-navbar navbar-fixed-top calcite-text-light calcite-bg-dark calcite-bgcolor-dark">
+		<!-- Title -->
+		<div class="calcite-title calcite-overflow-hidden">
+			<span class="calcite-title-main">Utah Geological Survey</span>
+			<span class="calcite-title-divider hidden-xs"></span>
+			<span class="calcite-title-sub hidden-xs">Utah Geochronology Database</span>
+		</div>
+	</nav> -->
+
 
 
 		<calcite-accordion id="searchwin" heading="Search" scale="l" selection-mode="single" style="width:340px;">
