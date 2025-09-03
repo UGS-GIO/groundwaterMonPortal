@@ -586,114 +586,117 @@ const locationsRenderer = new UniqueValueRenderer({
 
 //   ---------------------------------------------------   more info function controls  --------------------------------------------------
 
-// Function to download groundwater data
-function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
-  const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
-  //const baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data_plus_manual_data';
-  const postgrestUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
+// Function to download groundwater data ('daily','monthly' or 'all')
+function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
+	console.log(dltype);
+	if (dltype == 'manual'){
+		var baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_manual_data';
+	} else if (dltype == 'transducer'){
+		var baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
+	}
+	const postgrestUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
+	console.log('Initial wellIds:', wellIds);
 
-  console.log('Initial wellIds:', wellIds);
+	// Ensure wellIds is an array, handling different input types
+	let wellIdArray;
+	if (Array.isArray(wellIds)) {
+		wellIdArray = wellIds;
+	} else if (typeof wellIds === 'string') {
+		wellIdArray = wellIds.split(',').map(id => id.trim());
+	} else if (typeof wellIds === 'number') {
+		wellIdArray = [wellIds];
+	} else {
+		throw new Error('Invalid wellIds format');
+	}
 
-  // Ensure wellIds is an array, handling different input types
-  let wellIdArray;
-  if (Array.isArray(wellIds)) {
-    wellIdArray = wellIds;
-  } else if (typeof wellIds === 'string') {
-    wellIdArray = wellIds.split(',').map(id => id.trim());
-  } else if (typeof wellIds === 'number') {
-    wellIdArray = [wellIds];
-  } else {
-    throw new Error('Invalid wellIds format');
-  }
+	console.log('Processed wellIds:', wellIdArray);
 
-  console.log('Processed wellIds:', wellIdArray);
-
-  // Create promises for each well ID
-  const promises = wellIdArray.map(wellId => {
-    // Fetch the altlocationid for the given objectid using PostgREST
-    return fetch(`${postgrestUrl}?objectid=eq.${wellId}&select=altlocationid,locationname`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data && data.length > 0) {
-        const altlocationid = data[0].altlocationid;
-        const locationname = data[0].locationname;
-        console.log('Processing wellId:', wellId, 'altlocationid:', altlocationid);
-        
-        const params = new URLSearchParams({
-          p_well_id: altlocationid.toString(),
-          p_type: dataType,
-          p_from_date: fromDate,
-          p_to_date: toDate
-        });
-        const url = `${baseUrl}?${params}`;
-        console.log('Fetch URL:', url);
-        
-        return fetch(url, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-        })
-        .then(response => {
-          if (!response.ok) {
-            return response.text().then(text => {
-              throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
-            });
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('Data received for wellId:', wellId, 'altlocationid:', altlocationid, data);
-          
-          let csvContent = '';
-          
-          // Split data into metadata and readings
-          const metadata = data.filter(row => row.metadata_key !== null);
-          const readings = data.filter(row => row.metadata_key === null);
-          
-          // Create metadata section
-          csvContent += 'Metadata\n';
-          metadata.forEach(item => {
-            if (item.metadata_key && item.metadata_value) {
-              csvContent += `${item.metadata_key},${item.metadata_value}\n`;
-            }
-          });
-          
-          // Add blank line between metadata and readings
-          csvContent += '\n';
-          
-          // Create readings section if there are any readings
-          if (readings.length > 0) {
-            // Get all possible column names excluding null values
-            const columns = Object.keys(readings[0]).filter(key => 
-              key !== 'metadata_key' && key !== 'metadata_value'
-            );
-            
-            // Add headers
-            csvContent += columns.join(',') + '\n';
-            
-            // Add data rows
-            readings.forEach(reading => {
-              const rowValues = columns.map(col => {
-                const value = reading[col];
-                return value === null ? '' : value;
-              });
-              csvContent += rowValues.join(',') + '\n';
-            });
-          }
-          
-          return csvContent;
-        });
-      } else {
-        throw new Error(`No altlocationid found for objectid: ${wellId}`);
-      }
-    });
-  });
+	// Create promises for each well ID
+	const promises = wellIdArray.map(wellId => {
+		// Fetch the altlocationid for the given objectid using PostgREST
+		return fetch(`${postgrestUrl}?objectid=eq.${wellId}&select=altlocationid,locationname`, {
+		method: 'GET',
+		headers: {
+			'Accept': 'application/json'
+		}
+		})
+		.then(response => response.json())
+		.then(data => {
+		if (data && data.length > 0) {
+			const altlocationid = data[0].altlocationid;
+			const locationname = data[0].locationname;
+			console.log('Processing wellId:', wellId, 'altlocationid:', altlocationid);
+			
+			const params = new URLSearchParams({
+			p_well_id: altlocationid.toString(),
+			p_type: dataType,
+			p_from_date: fromDate,
+			p_to_date: toDate
+			});
+			const url = `${baseUrl}?${params}`;
+			console.log('Fetch URL:', url);
+			
+			return fetch(url, {
+			method: 'GET',
+			headers: {
+				'Accept': 'application/json'
+			}
+			})
+			.then(response => {
+			if (!response.ok) {
+				return response.text().then(text => {
+				throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+				});
+			}
+			return response.json();
+			})
+			.then(data => {
+			console.log('Data received for wellId:', wellId, 'altlocationid:', altlocationid, data);
+			
+			let csvContent = '';
+			
+			// Split data into metadata and readings
+			const metadata = data.filter(row => row.metadata_key !== null);
+			const readings = data.filter(row => row.metadata_key === null);
+			
+			// Create metadata section
+			csvContent += 'Metadata\n';
+			metadata.forEach(item => {
+				if (item.metadata_key && item.metadata_value) {
+				csvContent += `${item.metadata_key},${item.metadata_value}\n`;
+				}
+			});
+			
+			// Add blank line between metadata and readings
+			csvContent += '\n';
+			
+			// Create readings section if there are any readings
+			if (readings.length > 0) {
+				// Get all possible column names excluding null values
+				const columns = Object.keys(readings[0]).filter(key => 
+				key !== 'metadata_key' && key !== 'metadata_value'
+				);
+				
+				// Add headers to csv file download
+				csvContent += columns.join(',') + '\n';
+				
+				// Add data rows
+				readings.forEach(reading => {
+				const rowValues = columns.map(col => {
+					const value = reading[col];
+					return value === null ? '' : value;
+				});
+				csvContent += rowValues.join(',') + '\n';
+				});
+			}
+			
+			return csvContent;
+			});
+		} else {
+			throw new Error(`No altlocationid found for objectid: ${wellId}`);
+		}
+	});
+  });	// now we can create the csv file below
 
   // Wait for all promises to resolve
   return Promise.all(promises)
@@ -737,8 +740,19 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate) {
       alert('An error occurred while downloading the data: ' + error.message);
     });
 }
+
 // Event listener for the main download button
 $("#btnDownload").click(function() {
+	setupDownload('transducer');	// send a param to indicate type of download
+});
+// Event listener for the main download button
+$("#btnDownloadMan").click(function() {
+	setupDownload('manual'); 		// send a param to indicate type of download
+});
+
+// Event listener for the main download button
+//$("#btnDownload").click(function() {
+function setupDownload(dltype) {
     if(!document.getElementById('fromDate').valueAsDate || !document.getElementById('toDate').valueAsDate) {
         alert("Please select both start and end dates");
         return;
@@ -753,29 +767,30 @@ $("#btnDownload").click(function() {
 
     var fromdate = document.getElementById('fromDate').valueAsDate.toISOString().split('T')[0];
     var todate = document.getElementById('toDate').valueAsDate.toISOString().split('T')[0];
-  var type = $("input[name='flowDownload']:checked").val();
+	var type = $("input[name='flowDownload']:checked").val();
 
-  console.log('Download button clicked. Parameters:', {
-    wellIds: gl.locIDs,
-    type: type,
-    fromdate: fromdate,
-    todate: todate
-  });
+	console.log('Download button clicked. Parameters:', {
+		wellIds: gl.locIDs,
+		type: type,
+		fromdate: fromdate,
+		todate: todate
+  	});
 
-  downloadGroundwaterData(gl.locIDs, type, fromdate, todate)
-    .catch(function(error) {
-      console.error('Download error:', error);
-      alert("Download Error: " + error.message);
-    })
-    .finally(function() {
-      downloading = false;
-      $("#procMessage").text("Populating Graph...");
-      $("#divSpinner").hide();
-    });
-});
+	downloadGroundwaterData(gl.locIDs, type, fromdate, todate, dltype)
+		.catch(function(error) {
+			console.error('Download error:', error);
+			alert("Download Error: " + error.message);
+		})
+		.finally(function() {
+			downloading = false;
+			$("#procMessage").text("Populating Graph...");
+			$("#divSpinner").hide();
+		});
+};
 
 
-// Event listener for downloading data from all items in table results
+// Event listener for downloading data from all items in table results (no longer a feature)
+/*
 $("#btnDownloadTable").click(function() {
   if(!confirm("This could potentially take a long time. Are you sure you want to proceed?"))
     return;
@@ -795,6 +810,7 @@ $("#btnDownloadTable").click(function() {
       downloading = false;
     });
 });
+*/
 
 /*
 function enterKeyPressed(event) {
@@ -1333,7 +1349,7 @@ function continueLocationProcessing(res) {
 				select: 'readingdate, waterelevation',
 				order: 'readingdate',
 				locationid: `eq.${res.altlocationid}`,
-				datastatus: 'neq.rejected'
+				datastatus: 'neq.Rejected'
 			};
 
 			// First fetch manual data
@@ -1957,13 +1973,14 @@ function handleGraphResults(results, mresults) {
             {
                 "balloonText": "[[category]] : [[value]]",
                 "bullet": "round",
+				"title": "water table elevation",
+				//"title": res.locationname,
                 //"bulletBorderAlpha": 1,
                 "bulletColor": "#ffffff",
 				"bulletBorderColor": "#ffffff",
                 "bulletSize": 1,
                 "lineThickness": 1,
                 "lineColor": "#6C92B7",
-                "title": res.locationname,
                 "useLineColorForBulletBorder": true,
                 "valueField": "value",
 				"type": "smoothedLine",
@@ -2011,7 +2028,7 @@ function handleGraphResults(results, mresults) {
         "valueAxes": [
             {
                 "id": "ValueAxis-1",
-                "title": "Water Table Elevation (ft)"
+                "title": "Water Elevation (ft)"
             }
         ],
         "allLabels": [],
@@ -3236,7 +3253,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   </div>
 				  <div class="buttonrowleft buttonrow">
 					<!-- <input type="button" value="Download" id="btnDownload"> -->
-					<calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownload">Download</calcite-button>
+					<calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownload">Download Transducer Data</calcite-button>
+					<calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownloadMan">Download Manual Data</calcite-button>
 				  </div>
                 </div>
 			  
