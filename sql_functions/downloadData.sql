@@ -101,11 +101,12 @@ BEGIN
                ORDER BY date_trunc(''month'', r.readingdate) DESC
            ';
        ELSE
+           -- CHANGED: Include time for raw readings
            v_sql := '
                SELECT 
                    NULL::TEXT as metadata_key,
                    NULL::TEXT as metadata_value,
-                   to_char(r.readingdate, ''MM/DD/YYYY'') as reading_date,
+                   to_char(r.readingdate, ''MM/DD/YYYY HH24:MI:SS'') as reading_date,
                    r.measuredlevel::TEXT as measured_level,
                    r.temperature::TEXT as temperature,
                    r.measureddtw::TEXT as measured_dtw,
@@ -161,11 +162,12 @@ BEGIN
                ORDER BY date_trunc(''month'', f.flowdate) DESC
            ';
        ELSE
+           -- CHANGED: Include time for raw spring flow readings
            v_sql := '
                SELECT 
                    NULL::TEXT as metadata_key,
                    NULL::TEXT as metadata_value,
-                   to_char(f.flowdate, ''MM/DD/YYYY'') as reading_date,
+                   to_char(f.flowdate, ''MM/DD/YYYY HH24:MI:SS'') as reading_date,
                    NULL::TEXT as measured_level,
                    NULL::TEXT as temperature,
                    NULL::TEXT as measured_dtw,
