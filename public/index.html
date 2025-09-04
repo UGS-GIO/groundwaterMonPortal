@@ -627,12 +627,19 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 			const locationname = data[0].locationname;
 			console.log('Processing wellId:', wellId, 'altlocationid:', altlocationid);
 			
-			const params = new URLSearchParams({
-			p_well_id: altlocationid.toString(),
-			p_type: dataType,
-			p_from_date: fromDate,
-			p_to_date: toDate
-			});
+			if (dltype == 'manual'){
+				var params = new URLSearchParams({
+					p_well_id: altlocationid.toString(),
+				});
+			} else if (dltype == 'transducer'){
+				var params = new URLSearchParams({
+					p_well_id: altlocationid.toString(),
+					p_type: dataType,
+					p_from_date: fromDate,
+					p_to_date: toDate
+				});
+			}
+
 			const url = `${baseUrl}?${params}`;
 			console.log('Fetch URL:', url);
 			
@@ -660,12 +667,15 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 			const readings = data.filter(row => row.metadata_key === null);
 			
 			// Create metadata section
-			csvContent += 'Metadata\n';
-			metadata.forEach(item => {
-				if (item.metadata_key && item.metadata_value) {
-				csvContent += `${item.metadata_key},${item.metadata_value}\n`;
-				}
-			});
+			console.log(metadata);
+			if (metadata){
+				csvContent += 'Metadata\n';
+				metadata.forEach(item => {
+					if (item.metadata_key && item.metadata_value) {
+						csvContent += `${item.metadata_key},${item.metadata_value}\n`;
+					}
+				});
+			}
 			
 			// Add blank line between metadata and readings
 			csvContent += '\n';
@@ -674,7 +684,7 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 			if (readings.length > 0) {
 				// Get all possible column names excluding null values
 				const columns = Object.keys(readings[0]).filter(key => 
-				key !== 'metadata_key' && key !== 'metadata_value'
+					key !== 'metadata_key' && key !== 'metadata_value'
 				);
 				
 				// Add headers to csv file download
@@ -682,11 +692,11 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 				
 				// Add data rows
 				readings.forEach(reading => {
-				const rowValues = columns.map(col => {
-					const value = reading[col];
-					return value === null ? '' : value;
-				});
-				csvContent += rowValues.join(',') + '\n';
+					const rowValues = columns.map(col => {
+						const value = reading[col];
+						return value === null ? '' : value;
+					});
+					csvContent += rowValues.join(',') + '\n';
 				});
 			}
 			
