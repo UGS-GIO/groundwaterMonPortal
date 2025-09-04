@@ -732,12 +732,18 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 	  var freq = $('input[name="flowDownload"]:checked').val();  //gw_data
 	  //console.log('Frequency selected:', freq);
       
+		if (dltype == 'manual'){
+			var fname = '_manual';
+		} else {
+			var fname = '';
+		}
+
       // Create a download link and trigger the download
       const link = document.createElement("a");
       if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-		const filename = 'gw_site-'+sitename2+'_freq-'+freq+'_'+new Date().toISOString()+'.csv';
+		const filename = 'gw_site-'+sitename2+fname+'_freq-'+freq+'_'+new Date().toISOString()+'.csv';
         link.setAttribute("download", filename);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
@@ -3254,18 +3260,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <div id="csv-download">
                 <span style="font-size:1.3em;clear:both;float:left;">Groundwater Elevation Data Output</span>
                 <div id="download" style="float:left;clear:both;">
+					<div class="buttonrowleft buttonrow">
+						<!-- <input type="button" value="Download" id="btnDownload"> -->
+						
+						<calcite-button color="blue" style="height:34px;margin:5px;float:right;display:inline-block;" id="btnDownloadMan">Download all Manual Data</calcite-button>
+						<calcite-button color="blue" style="height:34px;margin:5px;float:right;display:inline-block;" id="btnDownload">Download Transducer Data</calcite-button>
+					</div>
                   <!-- Date Range: <input type="text" id="fromDate" class="infoDivInput"> to <input type="text" id="toDate" class="infoDivInput"> -->
-				  Date Range: <calcite-input-date-picker locale="en" min="" id="fromDate" style="width:135px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDate" locale="en" value="" style="width:135px;"></calcite-input-date-picker>
-                  <div id="flowDownload">Data Detail:
-                    <input type="radio" name="flowDownload" class="flowDL" value="all">All
-                    <input type="radio" name="flowDownload" class="flowDL" value="daily" checked>Daily Average
-                    <input type="radio" name="flowDownload" class="flowDL" value="monthly">Monthly Average
-                  </div>
-				  <div class="buttonrowleft buttonrow">
-					<!-- <input type="button" value="Download" id="btnDownload"> -->
-					<calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownload">Download Transducer Data</calcite-button>
-					<calcite-button color="blue" style="height:34px;margin:6px;float:right;" id="btnDownloadMan">Download Manual Data</calcite-button>
-				  </div>
+					<div style="display:inline-block; clear:both;">
+					Date Range: <calcite-input-date-picker locale="en" min="" id="fromDate" style="width:135px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDate" locale="en" value="" style="width:135px;"></calcite-input-date-picker>
+					<div id="flowDownload">Data Detail:
+						<input type="radio" name="flowDownload" class="flowDL" value="all">All
+						<input type="radio" name="flowDownload" class="flowDL" value="daily" checked>Daily Average
+						<input type="radio" name="flowDownload" class="flowDL" value="monthly">Monthly Average
+					</div>
+					</div>
                 </div>
 			  
                 <div style="clear:both;"></div>
