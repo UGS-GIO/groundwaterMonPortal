@@ -29,14 +29,14 @@ BEGIN
    INTO v_metadata
    FROM gwportal.ugs_ngwmn_monitoring_locations
    WHERE altlocationid = p_well_id::integer;
-
+   
    IF NOT FOUND THEN
        RAISE EXCEPTION 'Invalid well ID provided';
    END IF;
-
+   
    v_location_type := v_metadata.locationtype;
-
-   -- Return metadata rows first, then manual data (combined in one RETURN QUERY)
+   
+   -- Return metadata rows first, then manual data sorted by reading_date
    RETURN QUERY
    SELECT 'Well Name'::TEXT AS metadata_key, 
           v_metadata.locationname AS metadata_value, 
@@ -56,14 +56,14 @@ BEGIN
    UNION ALL SELECT 'Logger type'::TEXT, COALESCE(v_metadata.loggertype, ''), NULL::TEXT, NULL::TEXT, NULL::TEXT, NULL::TEXT
    UNION ALL SELECT 'Barometric logger'::TEXT, COALESCE(v_metadata.barologgertype, ''), NULL::TEXT, NULL::TEXT, NULL::TEXT, NULL::TEXT
    UNION ALL
-   SELECT NULL::TEXT as metadata_key,
-          NULL::TEXT as metadata_value,
-          to_char(m.readingdate, 'MM/DD/YYYY HH24:MI:SS') as reading_date,
-          m.dtwbelowground::TEXT as dtw_below_ground,
-          m.waterelevation::TEXT as water_elevation,
-          m.datastatus::TEXT as data_status
-   FROM gwportal.ugs_gw_manualdata m
-   WHERE m.locationid = p_well_id::integer;
-
+   (SELECT NULL::TEXT as metadata_key,
+           NULL::TEXT as metadata_value,
+           to_char(m.readingdate, 'MM/DD/YYYY HH24:MI:SS') as reading_date,
+           m.dtwbelowground::TEXT as dtw_below_ground,
+           m.waterelevation::TEXT as water_elevation,
+           m.datastatus::TEXT as data_status
+    FROM gwportal.ugs_gw_manualdata m
+    WHERE m.locationid = p_well_id::integer
+    ORDER BY m.readingdate ASC);
 END;
 $$ LANGUAGE plpgsql;
