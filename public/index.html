@@ -733,9 +733,9 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 	  //console.log('Frequency selected:', freq);
       
 		if (dltype == 'manual'){
-			var fname = '_manual';
+			var filename = 'gw_site-'+sitename2+'_manual_'+new Date().toISOString()+'.csv';
 		} else {
-			var fname = '';
+			var filename = 'gw_site-'+sitename2+'_freq-'+freq+'_'+new Date().toISOString()+'.csv';
 		}
 
       // Create a download link and trigger the download
@@ -743,7 +743,7 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
       if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-		const filename = 'gw_site-'+sitename2+fname+'_freq-'+freq+'_'+new Date().toISOString()+'.csv';
+		
         link.setAttribute("download", filename);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
