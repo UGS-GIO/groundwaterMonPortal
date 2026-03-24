@@ -592,7 +592,7 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 	if (dltype == 'manual'){
 		var baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_manual_data';
 	} else if (dltype == 'transducer'){
-		var baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
+		var baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data_test';
 	}
 	const postgrestUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
 	console.log('Initial wellIds:', wellIds);
@@ -682,9 +682,12 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 			
 			// Create readings section if there are any readings
 			if (readings.length > 0) {
-				// Get all possible column names excluding null values
+				// Get all possible column names excluding unwanted fields and null values
 				const columns = Object.keys(readings[0]).filter(key => 
-					key !== 'metadata_key' && key !== 'metadata_value'
+					key !== 'metadata_key' && 
+					key !== 'metadata_value' &&
+					key !== 'measured_level' &&
+					key !== 'drift_correction'
 				);
 				
 				// Add headers to csv file download
@@ -857,11 +860,11 @@ async function getCombos() {
     try {
         const [projData, dataFilesData, laData] = await Promise.all([
             fetch('https://ugs-koop-734948684426.us-west3.run.app/unique_wlnetworknames?select=*')
-                .then(response => response.json()),
+				.then(r => { if (!r.ok) throw new Error(`unique_wlnetworknames failed: ${r.status}`); return r.json(); }),
             fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_loc_data_table?select=*')
-                .then(response => response.json()),
+                .then(r => { if (!r.ok) throw new Error(`ugs_gw_loc_data_table failed: ${r.status}`); return r.json(); }),
             fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_local_aquifer?select=code,aquifername&order=code')
-                .then(response => response.json())
+                .then(r => { if (!r.ok) throw new Error(`ugs_ngwmn_local_aquifer failed: ${r.status}`); return r.json(); })
         ]);
 
         handleComboResults([
@@ -886,15 +889,12 @@ function handleComboResults(results)
 	var res = results[0].features;
 	gl.proj = res;
 
-	var blankOpt = document.createElement("option");
-	blankOpt.text = "";
-	blankOpt.value = "";
 	var lkp;
 	
 	var projectSelect = document.createElement("select");
 	projectSelect.id = "projectSelect";
 
-	projectSelect.add(blankOpt);
+	projectSelect.add(Object.assign(document.createElement("option"), { text: "", value: "" }));
 	console.log(res);
 	for(var i = 0; i < res.length; i++)
 	{
@@ -906,6 +906,7 @@ function handleComboResults(results)
 		projectSelect.add(option);
 	}
 
+	$("#projectSelectAlt").empty()
 	document.getElementById("projectSelectAlt").appendChild(projectSelect);
 	$("#projectSelect").select2({
 		placeholder: "Select Project",
@@ -921,7 +922,7 @@ function handleComboResults(results)
 	res = results[1].features;
 	gl.DF = res;
 
-	locationTypeSelect.add(blankOpt);
+	locationTypeSelect.add(Object.assign(document.createElement("option"), { text: "", value: "" }));
 	for(var i = 0; i < res.length; i++)
 	{
 		var option = document.createElement("option");
@@ -930,7 +931,8 @@ function handleComboResults(results)
 		locationTypeSelect.add(option);
 	}
 
-	// does this do anything?  try commenting out
+	// does this do anything?  try commenting out (I think it controls 'select by location type' in the advanced search)
+	$("#locationTypeSelectAlt").empty();
 	document.getElementById("locationTypeSelectAlt").appendChild(locationTypeSelect);
 	$("#locationTypeSelect").select2({
 		placeholder: "Select Location Type",
@@ -1381,7 +1383,9 @@ function continueLocationProcessing(res) {
 				.catch(error => console.error('Error fetching data:', error));
 
             // Check for and fetch conductivity data if available
-            if (res.hascond === 1) {
+			console.log("TESTING FOR THE LATEST PROBLEM HERE!!!!");
+			console.log("hascond value:", res.hascond, typeof res.hascond);
+            if (res.hascond == 1) {
                 console.log("Fetching conductivity data");
                 const qGraphCond = {
                     select: 'readingdate, conductivity',
@@ -1390,11 +1394,20 @@ function continueLocationProcessing(res) {
                 };
 
                 fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
+					.then(condData => {
+						console.log("Conductivity data fetched:", condData);
+						return fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph)
+							.then(manData => additionalGraphResults(condData));
+					})
+					.catch(error => console.error('Error fetching conductivity data:', error));
+				/*
+				fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
                     .then(  fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph) //switch for new
 							.then(additionalGraphResults)
 							.catch(error => console.error('Error fetching conductivity data:', error))
 					)
                     .catch(error => console.error('Error fetching conductivity data:', error));
+				*/
             }
 
 
@@ -2097,6 +2110,7 @@ function handleGraphResults(results, mresults) {
 }
 
 // add second well results for Lucy
+/*
 function additionalGraphResults(results)
 {
 	console.log("ADDING an additional table for lucy");
@@ -2236,6 +2250,129 @@ function additionalGraphResults(results)
 		$("#graph-content-additional").hide();
 	}
 }
+*/
+
+function additionalGraphResults(results) {
+    console.log("ADDING conductivity chart");
+    console.log(results);
+
+    // Handle flat PostgREST array instead of old ArcGIS {features, fields} format
+    if (!results || results.length === 0) {
+        console.log('No conductivity data to graph');
+        $("#divSpinner").hide();
+        $("#csv-download").hide();
+        return;
+    }
+
+    var res = gl.loc[0];
+
+    chart = AmCharts.makeChart("graph-content-additional", {
+        "type": "serial",
+        "listeners": [{ "event": "zoomed", "method": handleZoom }],
+        "marginRight": 40,
+        "marginLeft": 40,
+        "autoMarginOffset": 20,
+        "categoryField": "readingdate",
+        "mouseWheelScrollEnabled": true,
+        "mouseWheelZoomEnabled": true,
+        "theme": "light",
+        "creditsPosition": "bottom-right",
+        "categoryAxis": {
+            "gridPosition": "start",
+            "parseDates": true,
+            "minPeriod": "mm"
+        },
+        "trendLines": [],
+        "graphs": [{
+            "balloonText": "[[readingdate]] : [[value]]",
+            "bullet": "round",
+            "bulletBorderAlpha": 1,
+            "bulletColor": "#6C92B7",
+            "bulletSize": 5,
+            "lineThickness": 1,
+            "lineColor": "#6C92B7",
+            "useLineColorForBulletBorder": true,
+            "id": "Graph1",
+            "title": res.locationname,
+            "valueField": "conductivity",
+            "hideBulletsCount": 50
+        }],
+        "chartScrollbar": {
+            "graph": "Graph1",
+            "updateOnReleaseOnly": true,
+            "oppositeAxis": false,
+            "offset": 25,
+            "scrollbarHeight": 20,
+            "backgroundColor": "#6C92B7",
+            "graphFillAlpha": 0,
+            "graphLineAlpha": 0.5,
+            "selectedGraphFillAlpha": 0,
+            "selectedGraphLineAlpha": 1,
+            "autoGridCount": false,
+            "dragIcon": "dragIconRectSmall",
+            "dragIconHeight": 25,
+            "color": "#FFFFFF"
+        },
+        "chartCursor": {
+            "valueLineEnabled": false,
+            "valueLineBalloonEnabled": false,
+            "cursorAlpha": 1,
+            "cursorColor": "#333333",
+            "valueLineAlpha": 1,
+            "valueZoomable": true,
+            "categoryBalloonDateFormat": "M/DD/YY L:NN A"
+        },
+        "guides": [],
+        "valueAxes": [{
+            "id": "ValueAxis-1",
+            "title": "Conductivity (µS/cm)"
+        }],
+        "allLabels": [],
+        "balloon": [],
+        "legend": {
+            "enabled": true,
+            "useGraphSettings": true,
+            "valueText": ""
+        },
+		"titles": [{
+			"id": "cond-title",
+			"text": "WaterConductivity Chart",
+			"size": 15
+		}],
+        "export": { "enabled": true }
+    });
+
+    // Build chart data directly from PostgREST flat array
+    var chartData = results
+        .filter(item => item.readingdate != null && item.conductivity != null)
+        .map(item => {
+            var dt = new Date(item.readingdate);
+            var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000);
+            dt = new Date(utc);
+            return {
+                readingdate: dt.toLocaleString(),
+                conductivity: item.conductivity
+            };
+        });
+
+    console.log("Conductivity chart data:", chartData);
+    chart.dataProvider = chartData;
+    chart.validateData();
+    chart.animateAgain();
+
+    chart.addListener("rendered", zoomChart);
+
+    if (chartData.length > 100) zoomChart(chart);
+
+    if (chartData.length > 0) {
+        $("#graph-content-additional").show();
+		//$("#graph-content-additional-title").show();
+    } else {
+        $("#graph-content-additional").hide();
+		//$("#graph-content-additional-title").hide();
+    }
+}
+
 		
 function zoomChart(chrt) {
 	if(chrt.dataProvider != null)
@@ -2400,7 +2537,7 @@ async function loadSiteLocations(site) {
     }
     
     const data = await response.json();
-    handleLocsResults({ features: data });
+    //handleLocsResults({ features: data });
   } catch (error) {
     console.error("Error in loadSiteLocations:", error);
 
@@ -3276,6 +3413,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 			  
                 <div style="clear:both;"></div>
               </div><hr>
+			  <div id="graph-content-additional-title" style="display:none; font-size:1.1em; font-weight:bold; padding-top:10px;">
+					Conductivity Chart
+				</div>
 			  <div id="graph-content-additional" style="height:400px;display:none;"></div>	
             </div> <!-- cd-panel-content -->
           </div> <!-- cd-panel-container -->
@@ -3367,6 +3507,3 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   </body>
 </html>
-
-
-
