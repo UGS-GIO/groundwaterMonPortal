@@ -68,7 +68,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       }
       #searchwin {
         display: block;
-        position: absolute;
+        position: relative;
         top: 6px;
         left: 60px;
 		z-index: 1 !important;;
@@ -82,6 +82,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         width: 600px; 
 		max-height: 250px;
 		overflow-y: auto;
+		z-index: 9999 !important;
       }
 
 	  #helpDiv {
@@ -163,6 +164,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     width: 460px;
     max-height: 92vh;
     overflow-y: auto;
+	z-index: 9999 !important;
   }
  
   #infoDiv .cd-panel-header {
@@ -399,7 +401,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         left: 0 !important;
         right: 0 !important;
         width: 100% !important;
-        z-index: 50 !important;   /* behind infoDiv (Esri expand widgets sit at ~90+) */
+        z-index: 1 !important;   /* behind infoDiv (Esri expand widgets sit at ~90+) */
         border-radius: 12px 12px 0 0;
         box-shadow: 0 -2px 12px rgba(0,0,0,0.18);
         max-height: 55vh;
@@ -526,7 +528,7 @@ require([
 		expanded: true
 	});
 	// add an info div for slider
-	view.ui.add(resultsExpand, "top-right");
+	//view.ui.add(resultsExpand, "top-right");
 
 	// the bottom left table view pane
 	const tableExpand = new Expand({
@@ -538,7 +540,36 @@ require([
 		content: infoDiv2
 	});
 	// add an info div for slider
-	view.ui.add(tableExpand, "bottom-left");
+	//view.ui.add(tableExpand, "bottom-left");
+
+	
+	const srchContainer = document.getElementById("searchwin");
+	view.ui.add(srchContainer, "manual");
+	
+	view.ui.remove("zoom");  // MUST be removed or search accordion will always be below results pane.
+	view.ui.add([
+		{
+			component: resultsExpand,
+			position: "top-right",
+			index: 99
+		}, {
+			component: tableExpand,
+			position: "bottom-left",
+			index: 99
+		}, {
+			component: srchContainer,
+			position: "top-left",
+			index: 0
+		}, {
+			component: "zoom",
+			position: "bottom-right",
+			index: 0
+		}
+	]);
+	
+	
+	view.ui.add(srchContainer, "top-middle");
+	//view.ui.add([zoom,srchContainer], "top-leading");
 
 
 	// -----------------------------------            create the 2 map layers        ---------------------------------------------------------------
