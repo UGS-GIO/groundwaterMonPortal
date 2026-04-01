@@ -68,19 +68,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       }
       #searchwin {
         display: block;
-        position: absolute;
-        top: 60px;
+        position: relative;
+        top: 6px;
         left: 60px;
-      }
-
-      #infoDiv {
-        background-color: white;
-        color: black;
-		font-size: 14px;
-        padding: 10px;
-        width: 450px; 
-		max-height:90vh;
-		overflow-y: auto;
+		z-index: 1 !important;;
       }
 
 	  #infoDiv2 {
@@ -91,6 +82,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         width: 600px; 
 		max-height: 250px;
 		overflow-y: auto;
+		z-index: 9999 !important;
       }
 
 	  #helpDiv {
@@ -160,6 +152,282 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 		font-size: 18pt;
 		line-height: 1em;
 	}
+
+	  /* ---- infoDiv Panel Styles ---- */
+  #infoDiv {
+    background-color: #ffffff;
+    color: #2d2d2d;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 0;
+    width: 460px;
+    max-height: 92vh;
+    overflow-y: auto;
+	z-index: 9999 !important;
+  }
+ 
+  #infoDiv .cd-panel-header {
+    background: #1a3a5c;
+    color: #ffffff;
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+ 
+  #infoDiv h1#pnlTitle {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+  }
+ 
+  #infoDiv .cd-panel-content {
+    padding: 14px 16px 20px 16px;
+  }
+ 
+  /* Location metadata text block */
+  #location-content {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.6;
+  }
+ 
+  #location-content img {
+    display: block;
+    margin: 10px 0;
+    border-radius: 4px;
+    border: 1px solid #dde3ea;
+    max-width: 100%;
+    width: 300px;
+  }
+ 
+  #location-content a {
+    color: #1a5fa8;
+    text-decoration: none;
+  }
+  #location-content a:hover {
+    text-decoration: underline;
+  }
+ 
+  #location-content span {
+    display: inline;
+  }
+ 
+  /* Section divider */
+  #infoDiv hr {
+    border: none;
+    border-top: 1px solid #dde3ea;
+    margin: 14px 0;
+  }
+ 
+  /* Spinner positioning */
+  #divSpinner {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    align-items: center;
+  }
+ 
+  #divSpinner .spinner {
+    height: 20px;
+    width: 20px;
+    margin: 0 6px 0 0;
+    border-width: 4px;
+  }
+ 
+  #procMessage {
+    color: #ffffff;
+    font-size: 12px;
+    line-height: 20px;
+  }
+ 
+  /* No data message */
+  #graph-message {
+    color: #888;
+    font-size: 13px;
+    padding: 10px 0;
+  }
+ 
+  /* Graph containers */
+  #graph-content,
+  #graph-content-flow,
+  #graph-content-additional {
+    height: 380px;
+    display: none;
+    margin: 10px 0;
+    border: 1px solid #dde3ea;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+ 
+  /* Graph radio options (daily/monthly for springs) */
+  #graph-options {
+    display: none;
+    padding: 6px 0 6px 4px;
+    font-size: 12px;
+    color: #555;
+  }
+ 
+  #graph-options input[type="radio"] {
+    margin-right: 4px;
+    margin-left: 10px;
+  }
+  #graph-options input[type="radio"]:first-child {
+    margin-left: 0;
+  }
+ 
+  /* CSV Download section */
+  #csv-download {
+    background: #f4f7fb;
+    border: 1px solid #dde3ea;
+    border-radius: 5px;
+    padding: 12px 14px;
+    margin-top: 14px;
+  }
+ 
+  #csv-download > span {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a3a5c;
+    margin-bottom: 10px;
+    letter-spacing: 0.01em;
+  }
+ 
+  /* Download buttons — side by side */
+  #download .buttonrowleft {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+ 
+  #download .buttonrowleft calcite-button {
+    height: 34px;
+    flex: 1 1 auto;
+    min-width: 160px;
+    margin: 0 !important;
+    float: none !important;
+  }
+ 
+  /* Date pickers row */
+  #download > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #444;
+  }
+ 
+  #flowDownload {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #555;
+    width: 100%;
+  }
+ 
+  #flowDownload input[type="radio"] {
+    margin: 0 3px 0 8px;
+  }
+  #flowDownload input[type="radio"]:first-child {
+    margin-left: 0;
+  }
+ 
+  /* Conductivity chart title */
+  #graph-content-additional-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a3a5c;
+    padding: 8px 0 2px 0;
+    display: none;
+  }
+ 
+  /* Notes table inside location content */
+  #locNotes1 {
+    overflow: auto;
+    max-height: 200px;
+    margin-top: 4px;
+    font-size: 12px;
+  }
+ 
+  /* Site location content */
+  #site-location-content {
+    font-size: 13px;
+    color: #333;
+    margin-top: 6px;
+  }
+
+  /* Location content rows — no <br> tags needed */
+.info-row {
+    margin: 3px 0;
+    line-height: 1.5;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #1a3a5c;
+}
+
+.info-section-header {
+    font-weight: 600;
+    color: #1a3a5c;
+    margin: 10px 0 4px 0;
+    padding-top: 6px;
+    border-top: 1px solid #eee;
+}
+
+#location-content img {
+    display: block;
+    margin: 8px 0 4px 0;
+    border-radius: 4px;
+    border: 1px solid #dde3ea;
+    max-width: 100%;
+}
+
+/* ── Mobile: dock searchwin to bottom ── */
+@media (max-width: 720px) {
+    #searchwin {
+        position: fixed !important;
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        z-index: 1 !important;   /* behind infoDiv (Esri expand widgets sit at ~90+) */
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.18);
+        max-height: 55vh;
+        overflow-y: auto;
+    }
+}
+
+/* ── Welcome/help content inside infoDiv ── */
+#infoDiv-welcome {
+    padding: 4px 0 8px 0;
+    font-size: 13px;
+    color: #444;
+    line-height: 1.7;
+}
+
+#infoDiv-welcome h2 {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #993300;
+    margin: 0 0 10px 0;
+}
+
+#infoDiv-welcome p {
+    margin: 0;
+}
 
     </style>
 
@@ -256,10 +524,11 @@ require([
 		expandTooltip: "Expand Site Details",
 		autoCollapse: true,
 		view: view,
-		content: infoDiv
+		content: infoDiv,
+		expanded: true
 	});
 	// add an info div for slider
-	view.ui.add(resultsExpand, "top-right");
+	//view.ui.add(resultsExpand, "top-right");
 
 	// the bottom left table view pane
 	const tableExpand = new Expand({
@@ -271,7 +540,36 @@ require([
 		content: infoDiv2
 	});
 	// add an info div for slider
-	view.ui.add(tableExpand, "bottom-left");
+	//view.ui.add(tableExpand, "bottom-left");
+
+	
+	const srchContainer = document.getElementById("searchwin");
+	view.ui.add(srchContainer, "manual");
+	
+	view.ui.remove("zoom");  // MUST be removed or search accordion will always be below results pane.
+	view.ui.add([
+		{
+			component: resultsExpand,
+			position: "top-right",
+			index: 99
+		}, {
+			component: tableExpand,
+			position: "bottom-left",
+			index: 99
+		}, {
+			component: srchContainer,
+			position: "top-left",
+			index: 0
+		}, {
+			component: "zoom",
+			position: "bottom-right",
+			index: 0
+		}
+	]);
+	
+	
+	view.ui.add(srchContainer, "top-middle");
+	//view.ui.add([zoom,srchContainer], "top-leading");
 
 
 	// -----------------------------------            create the 2 map layers        ---------------------------------------------------------------
@@ -478,20 +776,19 @@ const locationsRenderer = new UniqueValueRenderer({
 		// combine the above into one function?
 	}
 
+
 	// create & define the map legend
 	const legend = new Legend({
 		view: view,
+		container: legendContainer,   // render directly into accordion item
 		declaredClass: "gwlegend",
 		title: "Map Symbol Legend",
-		//layerId: ? is below deprecated?
 		layerInfos: [
 			{layer: waterareas, title: "Site Areas"},
 			{layer: wellspringlocations, title: "Locations"}
 		]
 	});
 
-	// Add widget to the bottom right corner of the view
-	view.ui.add(legend, "bottom-right");
 
 
 	var basemapGallery = new BasemapGallery({
@@ -516,18 +813,6 @@ const locationsRenderer = new UniqueValueRenderer({
 	});
 	// Add the expando basemap to the top-right corner of the view
 	view.ui.add(bgExpand, "top-right");
-
-	// add help and instructions expand
-	const helpExpand = new Expand({
-		collapsedIconClass: "esri-icon-collapse",
-		expandIconClass: "esri-icon-question",
-		expandTooltip: "Expand Site Details",
-		autoCollapse: true,
-		view: view,
-		content: helpDiv
-	});
-	// add an info div for slider
-	view.ui.add(helpExpand, "top-right");
 
 
 
@@ -592,7 +877,7 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 	if (dltype == 'manual'){
 		var baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_manual_data';
 	} else if (dltype == 'transducer'){
-		var baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data';
+		var baseUrl = 'https://ugs-koop-734948684426.us-west3.run.app/rpc/get_groundwater_data_test';
 	}
 	const postgrestUrl = 'https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations';
 	console.log('Initial wellIds:', wellIds);
@@ -682,9 +967,12 @@ function downloadGroundwaterData(wellIds, dataType, fromDate, toDate, dltype) {
 			
 			// Create readings section if there are any readings
 			if (readings.length > 0) {
-				// Get all possible column names excluding null values
+				// Get all possible column names excluding unwanted fields and null values
 				const columns = Object.keys(readings[0]).filter(key => 
-					key !== 'metadata_key' && key !== 'metadata_value'
+					key !== 'metadata_key' && 
+					key !== 'metadata_value' &&
+					key !== 'measured_level' &&
+					key !== 'drift_correction'
 				);
 				
 				// Add headers to csv file download
@@ -857,11 +1145,11 @@ async function getCombos() {
     try {
         const [projData, dataFilesData, laData] = await Promise.all([
             fetch('https://ugs-koop-734948684426.us-west3.run.app/unique_wlnetworknames?select=*')
-                .then(response => response.json()),
+				.then(r => { if (!r.ok) throw new Error(`unique_wlnetworknames failed: ${r.status}`); return r.json(); }),
             fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_loc_data_table?select=*')
-                .then(response => response.json()),
+                .then(r => { if (!r.ok) throw new Error(`ugs_gw_loc_data_table failed: ${r.status}`); return r.json(); }),
             fetch('https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_local_aquifer?select=code,aquifername&order=code')
-                .then(response => response.json())
+                .then(r => { if (!r.ok) throw new Error(`ugs_ngwmn_local_aquifer failed: ${r.status}`); return r.json(); })
         ]);
 
         handleComboResults([
@@ -886,15 +1174,12 @@ function handleComboResults(results)
 	var res = results[0].features;
 	gl.proj = res;
 
-	var blankOpt = document.createElement("option");
-	blankOpt.text = "";
-	blankOpt.value = "";
 	var lkp;
 	
 	var projectSelect = document.createElement("select");
 	projectSelect.id = "projectSelect";
 
-	projectSelect.add(blankOpt);
+	projectSelect.add(Object.assign(document.createElement("option"), { text: "", value: "" }));
 	console.log(res);
 	for(var i = 0; i < res.length; i++)
 	{
@@ -906,6 +1191,7 @@ function handleComboResults(results)
 		projectSelect.add(option);
 	}
 
+	$("#projectSelectAlt").empty()
 	document.getElementById("projectSelectAlt").appendChild(projectSelect);
 	$("#projectSelect").select2({
 		placeholder: "Select Project",
@@ -921,7 +1207,7 @@ function handleComboResults(results)
 	res = results[1].features;
 	gl.DF = res;
 
-	locationTypeSelect.add(blankOpt);
+	locationTypeSelect.add(Object.assign(document.createElement("option"), { text: "", value: "" }));
 	for(var i = 0; i < res.length; i++)
 	{
 		var option = document.createElement("option");
@@ -930,7 +1216,8 @@ function handleComboResults(results)
 		locationTypeSelect.add(option);
 	}
 
-	// does this do anything?  try commenting out
+	// does this do anything?  try commenting out (I think it controls 'select by location type' in the advanced search)
+	$("#locationTypeSelectAlt").empty();
 	document.getElementById("locationTypeSelectAlt").appendChild(locationTypeSelect);
 	$("#locationTypeSelect").select2({
 		placeholder: "Select Location Type",
@@ -1221,9 +1508,11 @@ function handleLocResults(results, zoom) {
 	// var zoom is passed from click events. Needs to be no/false when user clicks on map, and yes when user clicks on search results talbe.
 
     $("#pnlTitle").empty();
-    $("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
-    $("#location-content").empty();
-    $("#site-location-content").empty();
+	$("#pnlTitle").text((res.locationname == null ? "" : "Location: " + res.locationname));
+	$("#location-content").empty().show();      // reveal it now that data is loading
+	$("#site-location-content").empty();
+	$("#infoDiv-welcome").hide();               // hide the welcome message
+	$("#infoDiv-divider").show();               // show the hr separator
     gl.locIDs = res.objectid;
     console.log(res.imagepath);
 
@@ -1249,40 +1538,53 @@ function handleLocResults(results, zoom) {
 }
 
 function appendLocationContent(res, imageUrl) {
-    $("#location-content")
-        .append((res.locationid == null ? "" : "<span>ID: " + res.locationid + "</span><br>"))
-        .append((res.locationdesc == null ? "" : "<br><span>Description: " + res.locationdesc + "</span><br>"))
-        .append(`<a href='${imageUrl}' target='_blank'><img src='${imageUrl}' width='300px' alt='Location Image'></img></a><br>`)
-        .append("<br><span>Location Information " + (res.horizontalcoordrefsystem == null ? "" : "(" + res.horizontalcoordrefsystem + ")") + "</span><br>")
-        .append((res.latitude == null ? "" : "<span>Latitude: " + res.latitude + "</span><br>"))
-        .append((res.longitude == null ? "" : "<span>Longitude: " + res.longitude + "</span><br>"))
-        .append((res.county == null ? "" : "<span>County: " + res.county + "</span><br>"));
+    // Helper: only renders a row if value is non-null/non-empty
+    function row(label, value) {
+        if (value == null || value === "") return "";
+        return `<div class="info-row"><span class="info-label">${label}:</span> ${value}</div>`;
+    }
 
+    $("#location-content")
+        .append(row("ID", res.locationid))
+        .append(res.locationdesc ? `<div class="info-row">${res.locationdesc}</div>` : "")
+        .append(`<a href='${imageUrl}' target='_blank'><img src='${imageUrl}' width='300px' alt='Location Image'></a>`)
+        .append(`<div class="info-section-header">Location Information${res.horizontalcoordrefsystem ? " (" + res.horizontalcoordrefsystem + ")" : ""}</div>`)
+        .append(row("Latitude", res.latitude))
+        .append(row("Longitude", res.longitude))
+        .append(row("County", res.county));
 
     if (res.usgs_id != null && res.usgs_id.length > 0)
-        $("#location-content").append("<br /><span>USGS Well Number: <a href='http://nwis.waterdata.usgs.gov/nwis/gwlevels/?site_no=" + res.usgs_id + "' target='_blank'>" + res.usgs_id + "</a></span><br>");
+        $("#location-content").append(
+            `<div class="info-row"><span class="info-label">USGS Well Number:</span> <a href='http://nwis.waterdata.usgs.gov/nwis/gwlevels/?site_no=${res.usgs_id}' target='_blank'>${res.usgs_id}</a></div>`
+        );
 
     $("#location-content")
-        .append((res.wrnum == null ? "" : "<br><span>Water Rights Number: " + res.wrnum + "</span><br>"))
-        .append((res.win == null ? "" : "<br><span>WIN: <a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=" + res.win + "' target='_blank'>" + res.win + "</span><br>"))
-        .append((res.verticalmeasure == null ? "" : "<br><span>Ground Elevation " + (res.verticalunit == null ? "" : "(" + res.verticalunit + ")") + ": " + res.verticalmeasure.toFixed(1) + "</span><br>"))
-        .append((res.welldepth == null ? "" : "<br><span>Borehole Depth (ft)" + (res.welldepthmeasurunit == null ? "" : "(" + res.welldepthmeasureunit + ")") + ": " + res.welldepth + "</span><br>"))
-        .append("<br><span id='si'>Screened Interval</span><br>")
-        .append((res.loggertype == null ? "" : "<br><span>Logger Type: " + res.loggertype + "</span><br>"))
-        .append((res.aquifername == null ? "" : "<br><span>Screened Unit: " + getLocalAquifer(res.aquifername) + "</span><br>"))
-        .append((res.notes == null ? "" : "<br><span>Notes: " + res.notes + "</span>"))
-        .append("<br><span>Note Log<div id='locNotes1' style='overflow:auto;max-height:300px;'></div>");
+        .append(row("Water Rights Number", res.wrnum));
 
-	var pUrl = 'https://geology.utah.gov/docs/gwp/snakevalley/logs/';
+    if (res.win != null)
+        $("#location-content").append(
+            `<div class="info-row"><span class="info-label">WIN:</span> <a href='http://waterrights.utah.gov/wellinfo/welldrilling/wlbrowse.asp?WIN=${res.win}' target='_blank'>${res.win}</a></div>`
+        );
+
+    $("#location-content")
+        .append(row("Ground Elevation " + (res.verticalunit ? "(" + res.verticalunit + ")" : ""), res.verticalmeasure != null ? res.verticalmeasure.toFixed(1) : null))
+        .append(row("Borehole Depth (ft)", res.welldepth))
+        .append(`<div class="info-row"><span class="info-label" id="si">Screened Interval</span></div>`)
+        .append(row("Logger Type", res.loggertype))
+        .append(row("Screened Unit", res.aquifername ? getLocalAquifer(res.aquifername) : null))
+        .append(res.notes ? `<div class="info-row"><span class="info-label">Notes:</span> ${res.notes}</div>` : "")
+        .append(`<div class="info-row"><span class="info-label">Note Log</span><div id='locNotes1' style='overflow:auto;max-height:300px;margin-top:4px;'></div></div>`);
+
+    const pUrl = 'https://geology.utah.gov/docs/gwp/snakevalley/logs/';
 
     if (res.linklithologiclog != null)
-        $("#location-content").append("<span><a href='" + pUrl + res.linklithologiclog + "' target='_blank'>Lithologic Log</a></span>");
+        $("#location-content").append(`<div class="info-row"><a href='${pUrl}${res.linklithologiclog}' target='_blank'>Lithologic Log</a></div>`);
 
     if (res.linkgeophysicallog != null)
-        $("#location-content").append("<br><span><a href='" + pUrl + res.linkgeophysicallog + "' target='_blank'>Geophysical Log</a></span>");
+        $("#location-content").append(`<div class="info-row"><a href='${pUrl}${res.linkgeophysicallog}' target='_blank'>Geophysical Log</a></div>`);
 
     if (res.linkdevelopmentlog != null)
-        $("#location-content").append("<br><span><a href='" + pUrl + res.linkdevelopmentlog + "' target='_blank'>Development Log</a></span>");
+        $("#location-content").append(`<div class="info-row"><a href='${pUrl}${res.linkdevelopmentlog}' target='_blank'>Development Log</a></div>`);
 }
 
 async function fetchPostgREST(endpoint, params) {
@@ -1353,52 +1655,64 @@ function continueLocationProcessing(res) {
             $(".divFlow").hide();
             
 
-            // Check for manual & fetch manual water level data
-            //if (res.manual === 1) {   // what is the field name for this?
-			console.log("Fetching manual water reading data");
-			const qGraph = {
-				select: 'readingdate, waterelevation',
-				order: 'readingdate',
-				locationid: `eq.${res.altlocationid}`,
-			};
-			const qGraph2 = {
-				select: 'readingdate, waterelevation',
-				order: 'readingdate',
-				locationid: `eq.${res.altlocationid}`,
-				datastatus: 'neq.Rejected'
-			};
 
-			// First fetch manual data
-			fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph2)
-				.then(manData => {
-					// Once we have manData, fetch the water elevation data
-					return fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
-						.then(graphData => {
-							// Call your handler with both datasets
-							handleGraphResults(graphData, manData);
-						});
-				})
-				.catch(error => console.error('Error fetching data:', error));
+				// Replace the entire well-handling block inside continueLocationProcessing()
+				// (the else branch after the spring check)
 
-            // Check for and fetch conductivity data if available
-            if (res.hascond === 1) {
-                console.log("Fetching conductivity data");
-                const qGraphCond = {
-                    select: 'readingdate, conductivity',
-                    order: 'readingdate',
-                    locationid: `eq.${res.altlocationid}`
-                };
+				const qGraph = {
+					select: 'readingdate, waterelevation',
+					order: 'readingdate',
+					locationid: `eq.${res.altlocationid}`,
+				};
+				const qGraph2 = {
+					select: 'readingdate, waterelevation',
+					order: 'readingdate',
+					locationid: `eq.${res.altlocationid}`,
+					datastatus: 'neq.Rejected'
+				};
 
-                fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
-                    .then(  fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph) //switch for new
-							.then(additionalGraphResults)
-							.catch(error => console.error('Error fetching conductivity data:', error))
-					)
-                    .catch(error => console.error('Error fetching conductivity data:', error));
-            }
+				// Build an array of promises — always fetch manual + transducer,
+				// conditionally add conductivity as a third promise
+				const dataPromises = [
+					fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_manualdata', qGraph2),
+					fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraph)
+				];
+
+				if (res.hascond == 1) {
+					console.log("hascond = 1, will fetch conductivity");
+					const qGraphCond = {
+						select: 'readingdate, conductivity',
+						order: 'readingdate',
+						locationid: `eq.${res.altlocationid}`
+					};
+					dataPromises.push(
+						fetchPostgREST('https://ugs-koop-734948684426.us-west3.run.app/reading', qGraphCond)
+					);
+				}
+
+				// Now all three (or two) fetches run in parallel, and we handle results
+				// only after ALL of them have resolved — no race condition
+				Promise.all(dataPromises)
+					.then(results => {
+						const manData   = results[0];
+						const graphData = results[1];
+						const condData  = results[2]; // undefined if hascond != 1
+
+						// Draw the main water elevation chart
+						handleGraphResults(graphData, manData);
+
+						// Draw the conductivity chart only if we fetched it
+						if (condData !== undefined) {
+							console.log("Rendering conductivity chart with", condData.length, "records");
+							additionalGraphResults(condData);
+						}
+					})
+					.catch(error => console.error('Error fetching well data:', error));
+ 		}
 
 
-        }
+
+   
     } else {
         console.log('NO ALTLOCATIONID!!! SHOULD THERE BE?');
         $("#divSpinner").hide();
@@ -2097,6 +2411,7 @@ function handleGraphResults(results, mresults) {
 }
 
 // add second well results for Lucy
+/*
 function additionalGraphResults(results)
 {
 	console.log("ADDING an additional table for lucy");
@@ -2236,6 +2551,129 @@ function additionalGraphResults(results)
 		$("#graph-content-additional").hide();
 	}
 }
+*/
+
+function additionalGraphResults(results) {
+    console.log("ADDING conductivity chart");
+    console.log(results);
+
+    // Handle flat PostgREST array instead of old ArcGIS {features, fields} format
+    if (!results || results.length === 0) {
+        console.log('No conductivity data to graph');
+        $("#divSpinner").hide();
+        $("#csv-download").hide();
+        return;
+    }
+
+    var res = gl.loc[0];
+
+    chart = AmCharts.makeChart("graph-content-additional", {
+        "type": "serial",
+        "listeners": [{ "event": "zoomed", "method": handleZoom }],
+        "marginRight": 40,
+        "marginLeft": 40,
+        "autoMarginOffset": 20,
+        "categoryField": "readingdate",
+        "mouseWheelScrollEnabled": true,
+        "mouseWheelZoomEnabled": true,
+        "theme": "light",
+        "creditsPosition": "bottom-right",
+        "categoryAxis": {
+            "gridPosition": "start",
+            "parseDates": true,
+            "minPeriod": "mm"
+        },
+        "trendLines": [],
+        "graphs": [{
+            "balloonText": "[[readingdate]] : [[value]]",
+            "bullet": "round",
+            "bulletBorderAlpha": 1,
+            "bulletColor": "#6C92B7",
+            "bulletSize": 5,
+            "lineThickness": 1,
+            "lineColor": "#6C92B7",
+            "useLineColorForBulletBorder": true,
+            "id": "Graph1",
+            "title": res.locationname,
+            "valueField": "conductivity",
+            "hideBulletsCount": 50
+        }],
+        "chartScrollbar": {
+            "graph": "Graph1",
+            "updateOnReleaseOnly": true,
+            "oppositeAxis": false,
+            "offset": 25,
+            "scrollbarHeight": 20,
+            "backgroundColor": "#6C92B7",
+            "graphFillAlpha": 0,
+            "graphLineAlpha": 0.5,
+            "selectedGraphFillAlpha": 0,
+            "selectedGraphLineAlpha": 1,
+            "autoGridCount": false,
+            "dragIcon": "dragIconRectSmall",
+            "dragIconHeight": 25,
+            "color": "#FFFFFF"
+        },
+        "chartCursor": {
+            "valueLineEnabled": false,
+            "valueLineBalloonEnabled": false,
+            "cursorAlpha": 1,
+            "cursorColor": "#333333",
+            "valueLineAlpha": 1,
+            "valueZoomable": true,
+            "categoryBalloonDateFormat": "M/DD/YY L:NN A"
+        },
+        "guides": [],
+        "valueAxes": [{
+            "id": "ValueAxis-1",
+            "title": "Conductivity (µS/cm)"
+        }],
+        "allLabels": [],
+        "balloon": [],
+        "legend": {
+            "enabled": true,
+            "useGraphSettings": true,
+            "valueText": ""
+        },
+		"titles": [{
+			"id": "cond-title",
+			"text": "Water Conductivity Chart",
+			"size": 15
+		}],
+        "export": { "enabled": true }
+    });
+
+    // Build chart data directly from PostgREST flat array
+    var chartData = results
+        .filter(item => item.readingdate != null && item.conductivity != null)
+        .map(item => {
+            var dt = new Date(item.readingdate);
+            var utc = dt.getTime() + (dt.getTimezoneOffset() * 60000);
+            dt = new Date(utc);
+            return {
+                readingdate: dt.toLocaleString(),
+                conductivity: item.conductivity
+            };
+        });
+
+    console.log("Conductivity chart data:", chartData);
+    chart.dataProvider = chartData;
+    chart.validateData();
+    chart.animateAgain();
+
+    chart.addListener("rendered", zoomChart);
+
+    if (chartData.length > 100) zoomChart(chart);
+
+    if (chartData.length > 0) {
+        $("#graph-content-additional").show();
+		//$("#graph-content-additional-title").show();
+    } else {
+        $("#graph-content-additional").hide();
+		//$("#graph-content-additional-title").hide();
+    }
+}
+
 		
 function zoomChart(chrt) {
 	if(chrt.dataProvider != null)
@@ -2330,8 +2768,8 @@ function handleSiteResults(results)
 			$("#pnlTitle").append("Site: <a href='http://" + res.linkadditionalinfo + "' target='_blank' class='aLight'>" + res.name + "</a>");
 		else
 			$("#pnlTitle").text("Site: " + res.name);
-		$("#location-content").empty();
-		$("#site-location-content").empty();
+			$("#location-content").empty();
+			$("#site-location-content").empty();
 		if(res.imagepath != null && res.imagepath.length > 0)
 		{
 			$("#location-content").append("<a href='./" + res.imagepath + "' target='_blank'><img src='./" + res.imagepath + "' width='300px' alt='No Image'></img></a><br><br>");
@@ -2400,7 +2838,7 @@ async function loadSiteLocations(site) {
     }
     
     const data = await response.json();
-    handleLocsResults({ features: data });
+    //handleLocsResults({ features: data });
   } catch (error) {
     console.error("Error in loadSiteLocations:", error);
 
@@ -2702,6 +3140,16 @@ async function doSearch() {
   const loc = $("#locationName").val();
   const locType = $("#locationTypeSelect").val();
   console.log("searching");
+
+  //close the advanced search pane so its not in front of results pane
+  const accordion = document.getElementById("searchwin");
+      // Robust attribute-based toggle
+      const setAccordion = (open) => {
+        accordion.querySelectorAll("calcite-accordion-item").forEach(el => {
+          if (open) el.setAttribute("expanded", "");
+          else el.removeAttribute("expanded");
+        });
+      };
 
   const msSite = "https://ugs-koop-734948684426.us-west3.run.app/ugs_gw_sites";
   const msLocation = "https://ugs-koop-734948684426.us-west3.run.app/ugs_ngwmn_monitoring_locations";
@@ -3142,7 +3590,11 @@ function handleqLocsResults(results) {
 		}); 
 		*/
 
-$("#helpDiv").show();
+	// Auto-expand the infoDiv panel on desktop
+	if (window.innerWidth > 720) {
+		resultsExpand.expand();
+	}
+	// helpDiv is removed — nothing to show
 
 });    // end dojo.require
 
@@ -3185,30 +3637,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                 <calcite-label>Site Area Name<calcite-input type="text" id="siteName" value=""></calcite-input></calcite-label>
 
-				<!--
-                <calcite-label class="sc-calcite-label-h sc-calcite-label-s" alignment="start" status="idle" scale="m" layout="default" id="projectSelectnew">
-					<label class="sc-calcite-label sc-calcite-label-s">Select Project
-						<calcite-select data-name="alignment" data-group="props0" data-component="calcite-input" scale="m" width="auto" calcite-hydrated="">
-						<calcite-option value="1">Snake Valley</calcite-option>
-						<calcite-option value="2"selected >Wasatch Front</calcite-option>
-						<calcite-option value="3">Courthouse Wash</calcite-option>
-						<calcite-option value="4">NGWMN</calcite-option>
-						<calcite-option value="5">Snake Valley Piezometers</calcite-option>
-						<calcite-option value="6">Juab Valley</calcite-option>
-						</calcite-select>
-					</label>
-				</calcite-label>
-
-				<calcite-label class="sc-calcite-label-h sc-calcite-label-s" alignment="start" status="idle" scale="m" layout="default" id="projectSelectnew">
-					<label class="sc-calcite-label sc-calcite-label-s">Select Location Type
-						<calcite-select data-name="alignment" data-group="props0" data-component="calcite-input" scale="m" width="auto" calcite-hydrated="">
-						<calcite-option value="flow">Spring</calcite-option>
-						<calcite-option value="reading"selected >Well</calcite-option>
-						<calcite-option value="piez">Peizometer</calcite-option>
-						</calcite-select>
-					</label>
-				</calcite-label>
-				-->
 
                 <calcite-button id="btnSearch" style="float:left">Search</calcite-button>&nbsp;
 				<calcite-button id="btnClear" style="">Clear</calcite-button>
@@ -3216,71 +3644,133 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 				<calcite-label>Select by Project<div id="projectSelectAlt" class="filterElement"></div></calcite-label>				
 				<calcite-label>Select by Location Type<div id="locationTypeSelectAlt" class="filterElement"></div></calcite-label>
-				
 				<br>
 
 			</calcite-accordion-item>
+
+			<calcite-accordion-item icon="legend" item-title="Map Legend" item-subtitle="Symbol reference">
+				<div id="legendContainer" style="padding: 4px 0;"></div>
+			</calcite-accordion-item>
+
 		</calcite-accordion>
 
 
 	  <!-- panel populated by site info when clicking on a site -->
-      <calcite-panel id="infoDiv">
-        <div class="cd-panel from-right">
-          <header class="cd-panel-header">
-            <h1 id="pnlTitle"></h1>
-            <div id="divSpinner" style="display:none;position:absolute;top:0;right:100px;">
-              <div class="spinner" style="float:left;"></div>
-              <div style="float:left;color:white;" id="procMessage">
-                 Populating Graph...
-              </div>
+<calcite-panel id="infoDiv">
+  <div class="cd-panel from-right">
+ 
+    <!-- Sticky header -->
+    <header class="cd-panel-header" style="
+      background: #1a3a5c;
+      color: #fff;
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    ">
+      <h1 id="pnlTitle" style="
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        margin: 0;
+        line-height: 1.3;
+      "></h1>
+      <!-- Loading spinner -->
+      <div id="divSpinner" style="display:none; position:absolute; top:12px; right:16px; display:none; align-items:center; gap:6px;">
+        <div class="spinner" style="height:18px; width:18px; margin:0; border-width:3px;"></div>
+        <div style="color:#fff; font-size:12px;" id="procMessage">Populating Graph...</div>
+      </div>
+    </header>
+ 
+    <!-- Panel body -->
+    <div class="cd-panel-container">
+      <div class="cd-panel-content" style="padding: 14px 16px 24px 16px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 13px; color: #2d2d2d; line-height: 1.6;">
+
+    <!-- Default welcome content shown on load, hidden when a location loads -->
+    <div id="infoDiv-welcome">
+        <h2>Groundwater Monitoring Data Portal</h2>
+        <p>The Utah Geological Survey (UGS) developed the Groundwater Monitoring Data Portal to store and distribute large quantities of monitoring data acquired through the various monitoring networks that the UGS maintains. The portal allows easy access to view, query, and download groundwater monitoring data from a dataset containing more than 12 million records, including well and piezometer water-level records and spring and surface flow measurements.</p>
+        <br>
+        <p>Select a well or spring on the map, or use the search panel to find a location. Data may be viewed directly in this panel, downloaded in CSV format. CSV files may be imported into Microsoft Excel or other software for further analysis and plotting.</p>
+        <br>
+        <p style="font-size:12px; color:#888;">This application was made possible by the efforts of Kevin Thomas, Quinton Williams, Steve Bowman, Lucy Jordan, Hugh Hurlow, Paul Inkenbrandt, Lance Weaver, and Nate Payne.</p>
+    </div>
+
+    <!-- Dynamic location metadata (populated by JS — hidden until a location loads) -->
+    <div id="location-content" style="font-size:13px; color:#333; line-height:1.6; display:none;"></div>
+    <div id="site-location-content" style="font-size:13px; color:#333; margin-top:6px;"></div>
+
+    <hr id="infoDiv-divider" style="border:none; border-top:1px solid #dde3ea; margin:14px 0; display:none;">
+
+    <!-- ... rest of the panel content unchanged ... -->
+  
+        <!-- No data message -->
+        <div id="graph-message" style="display:none; color:#888; font-size:13px; padding:8px 0;">
+          No Graph Data Available
+        </div>
+ 
+        <!-- ── Water Elevation Chart ── -->
+        <div id="graph-content" style="height:380px; display:none; margin:10px 0; border:1px solid #dde3ea; border-radius:4px; overflow:hidden;"></div>
+ 
+        <!-- ── Spring discharge chart (flow) ── -->
+        <div id="graph-content-flow" style="height:380px; display:none; margin:10px 0; border:1px solid #dde3ea; border-radius:4px; overflow:hidden;"></div>
+ 
+        <!-- Daily/Monthly toggle (springs only) -->
+        <div id="graph-options" class="divFlow" style="display:none; padding:4px 0 8px 2px; font-size:12px; color:#555;">
+          <input type="radio" name="flow" class="flow" value="daily" checked> Daily Average&nbsp;&nbsp;
+          <input type="radio" name="flow" class="flow" value="monthly"> Monthly Average
+        </div>
+ 
+        <!-- ── Conductivity Chart (moved here — just below elevation/flow charts, above download) ── -->
+        <div id="graph-content-additional-title" style="display:none; font-size:13px; font-weight:600; color:#1a3a5c; padding:6px 0 2px 0;">
+          Specific Conductance
+        </div>
+        <div id="graph-content-additional" style="height:380px; display:none; margin:0 0 10px 0; border:1px solid #dde3ea; border-radius:4px; overflow:hidden;"></div>
+ 
+        
+ 
+        <!-- ── CSV Download Section ── -->
+        <div id="csv-download" style="
+          background: #f4f7fb;
+          border: 1px solid #dde3ea;
+          border-radius: 5px;
+          padding: 12px 14px;
+		  display:none;
+        ">
+          <span style="display:block; font-size:13px; font-weight:600; color:#1a3a5c; margin-bottom:10px; letter-spacing:0.01em;">
+            Download Groundwater Data
+          </span>
+ 
+          <div id="download">
+            <!-- Buttons side by side -->
+            <div class="buttonrowleft buttonrow" style="display:flex; flex-direction:row; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+              <calcite-button color="blue" style="flex:1 1 auto; min-width:150px;" id="btnDownload">Download Transducer Data</calcite-button>
+              <calcite-button color="blue" style="flex:1 1 auto; min-width:150px;" id="btnDownloadMan">Download Manual Data</calcite-button>
             </div>
-          </header>
-    
-          <div class="cd-panel-container">
-            <div class="cd-panel-content">
-              <div id="location-content"></div>
-              <div id="site-location-content"></div>
-              <!-- <div id="divSpinner2" style="display:block;">
-              <div class="spinner" style="float:left;"></div>
-                <div style="float:left;margin-top:10px;">
-                   Populating Graph...
-                </div>
-              </div> -->
-              <div id="graph-message" style="display:none;"><br>No Graph Data</div>
-              <div id="graph-content" style="height:400px;display:none;"></div>
-              <div id="graph-content-flow" style="height:400px;display:none;"></div>
-              <div id="graph-options" class="divFlow" style="padding-left:70px;display:none;">
-                <input type="radio" name="flow" class="flow" value="daily" checked>Daily Average
-                <input type="radio" name="flow" class="flow" value="monthly">Monthly Average
-              </div>
-              <br>
-              <div id="csv-download">
-                <span style="font-size:1.3em;clear:both;float:left;">Groundwater Elevation Data Output</span>
-                <div id="download" style="float:left;clear:both;">
-					<div class="buttonrowleft buttonrow">
-						<!-- <input type="button" value="Download" id="btnDownload"> -->
-						
-						<calcite-button color="blue" style="height:34px;margin:5px;float:right;display:inline-block;" id="btnDownloadMan">Download all Manual Data</calcite-button>
-						<calcite-button color="blue" style="height:34px;margin:5px;float:right;display:inline-block;" id="btnDownload">Download Transducer Data</calcite-button>
-					</div>
-                  <!-- Date Range: <input type="text" id="fromDate" class="infoDivInput"> to <input type="text" id="toDate" class="infoDivInput"> -->
-					<div style="display:inline-block; clear:both;">
-					Date Range: <calcite-input-date-picker locale="en" min="" id="fromDate" style="width:135px;"></calcite-input-date-picker>&nbsp; to &nbsp;<calcite-input-date-picker id="toDate" locale="en" value="" style="width:135px;"></calcite-input-date-picker>
-					<div id="flowDownload">Data Detail:
-						<input type="radio" name="flowDownload" class="flowDL" value="all">All
-						<input type="radio" name="flowDownload" class="flowDL" value="daily" checked>Daily Average
-						<input type="radio" name="flowDownload" class="flowDL" value="monthly">Monthly Average
-					</div>
-					</div>
-                </div>
-			  
-                <div style="clear:both;"></div>
-              </div><hr>
-			  <div id="graph-content-additional" style="height:400px;display:none;"></div>	
-            </div> <!-- cd-panel-content -->
-          </div> <!-- cd-panel-container -->
-        </div> <!-- cd-panel -->
-      </calcite-panel>
+ 
+            <!-- Date range pickers -->
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:12px; color:#444;">
+              <span>Date Range:</span>
+              <calcite-input-date-picker locale="en" min="" id="fromDate" style="width:135px;"></calcite-input-date-picker>
+              <span>to</span>
+              <calcite-input-date-picker id="toDate" locale="en" value="" style="width:135px;"></calcite-input-date-picker>
+            </div>
+ 
+            <!-- Data detail radio group -->
+            <div id="flowDownload" style="margin-top:8px; font-size:12px; color:#555;">
+              Data Detail:&nbsp;
+              <input type="radio" name="flowDownload" class="flowDL" value="all"> All&nbsp;&nbsp;
+              <input type="radio" name="flowDownload" class="flowDL" value="daily" checked> Daily Average&nbsp;&nbsp;
+              <input type="radio" name="flowDownload" class="flowDL" value="monthly"> Monthly Average
+            </div>
+          </div>
+        </div><!-- /csv-download -->
+ 
+      </div><!-- /cd-panel-content -->
+    </div><!-- /cd-panel-container -->
+  </div><!-- /cd-panel -->
+</calcite-panel>
 
 	  <calcite-panel id="infoDiv2">	
 		<div id="tableDivOuter" style="z-index:1;">	
@@ -3325,14 +3815,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 -->
 	  
 
-	<calcite-panel id="helpDiv" style="display:none;">	
+	<!-- <calcite-panel id="helpDiv" style="display:none;">	
 	  <div class="" style="font-size:18px;"><h2 style="color: #000000;">	
 		<span style="color: #993300;">Groundwater Monitoring Data Portal</span></h2>	
 		<p><span style="font-weight: 400;">
 			The Utah Geological Survey (UGS) developed the Groundwater Monitoring Data Portal to store and distribute large quantities of monitoring data acquired through the various monitoring networks that the UGS maintains. The portal allows easy access to view, query, and download groundwater monitoring data from a dataset containing more than 12 million records, including well and piezometer water-level records and spring and surface flow measurements. Individual wells or surface water monitoring locations may be selected and additional information is available to view when clicking on their respective "Site Details" button. Data may be viewed directly in the "Site Details" panel, downloaded in CSV format, or a well or spring summary report may be viewed or downloaded in PDF format. CSV files may be imported into Microsoft Excel or other software for further analysis and plotting. This application would not have been possible without the initial efforts of Kevin Thomas, Quinton Williams, Steve Bowman, Lucy Jordan, and Hugh Hurlow. Continued efforts from Paul Inkenbrandt, Lance Weaver, and Nate Payne keep this application in working order.
 		</span></p>	<br>
 	  </div>	
-    </calcite-panel>
+    </calcite-panel> -->
 	
 
 
@@ -3367,6 +3857,3 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   </body>
 </html>
-
-
-
