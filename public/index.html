@@ -18,7 +18,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     </title>
 
 <!-- 	<script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.js"></script>
-	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.css" /> -->
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.css" /> 
+	
+	find replacement
+-->
 
 	<link rel="stylesheet" href="js/select2-4.0.3/css/select2.css" type="text/css">
 	<link rel="stylesheet" href="css/tablesorter/style.css" type="text/css">
@@ -495,6 +498,7 @@ require([
 	Map, MapView, FeatureLayer, WFSLayer, WFSUtils, UniqueValueRenderer, SimpleMarkerSymbol, Expand, BasemapGallery, Search, query, Query, QueryTask, PopupTemplate, Legend, Extent, Point, geometryEngine, StatisticDefinition, dojo, domConstruct, all, on
 	) => {
 
+	var currentLoadToken = 0;
 	var gl = {};
 	var chart;
 	var chartFlow;
@@ -1491,6 +1495,7 @@ async function LoadLocationData(locID, zoom) {
 // does it fire in other instances?// called when user clicks directly on a site
 // OR on advanced location search results table result
 function handleLocResults(results, zoom) {
+	const myToken = ++currentLoadToken;   // increment global token
 	console.log('HANDLE LOC RESULTS');
     console.log("handleLocResults", results);
     if (chart != null) {
@@ -1525,14 +1530,17 @@ function handleLocResults(results, zoom) {
     window.firebaseGetDownloadURL(imageRef)
         .then((url) => {
             console.log('Image URL:', url);
+			if (myToken !== currentLoadToken) return;  // stale, abort
             appendLocationContent(res, url);
         })
         .catch((error) => {
             console.error('Error getting download URL:', error);
             const noImageUrl = "no-image-available-new.png";
+			if (myToken !== currentLoadToken) return;  // stale, abort
             appendLocationContent(res, noImageUrl);
         })
         .finally(() => {
+			if (myToken !== currentLoadToken) return;  // stale, abort
             continueLocationProcessing(res);
         });
 }
@@ -3512,9 +3520,15 @@ function handleqLocsResults(results) {
 			$('.resultsTable tr > *:nth-child(2)').hide();
 			$("#" + type + "Table").tablesorter();
 			// when user clicks on tableRow show its data in the results pane
-			$('.huntTableRow:not(.bound)').addClass('bound').on("click", compPicked);
-			//$('.closeTable:not(.bound)').addClass('bound').on("click", toggleTableClose);
-			//$('#btnSelAll:not(.bound)').addClass('bound').on("click", selectElementContents);
+			//$('.huntTableRow:not(.bound)').addClass('bound').on("click", compPicked);
+			$('.huntTableRow:not(.bound)').addClass('bound').on("click", function(evt) {
+				const row = $(this);
+				if (row.data('loading')) return;   // ignore rapid repeat clicks
+				row.data('loading', true);
+				setTimeout(() => row.data('loading', false), 1500);
+				compPicked(evt);
+			});
+
 		}
 		
 		//Triggered when user clicks on a row in the results table
