@@ -25,6 +25,10 @@
 
 	if(isset($_POST['locID'])){
 		$locID = $_POST['locID'];
+		// Only a comma-separated list of integer IDs may reach the IN(...) queries below (SQLi guard).
+		if (!preg_match('/^\d+(,\d+)*$/', $locID)) {
+			die("Invalid location ID provided.");
+		}
 	}
 	else{
 		die("Invalid well ID provided.");
