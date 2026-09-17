@@ -43,6 +43,10 @@ if(isset($_POST['fromdate']) && isset($_POST['todate']))
 {
 	$fromdate = $_POST['fromdate'];
 	$todate = $_POST['todate'];
+	// Reject non-string (array) date input so it fails cleanly instead of a TypeError at strtotime().
+	if (!is_string($fromdate) || !is_string($todate)) {
+		die("Invalid dates provided.");
+	}
 }
 
 if(strtotime($fromdate) > strtotime($todate))
@@ -62,10 +66,13 @@ if(isset($_POST['siteIDs']))
 	if (!is_string($siteIDs) || !preg_match('/^\d+(,\d+)*$/', $siteIDs)) {
 		die("Invalid site ID provided.");
 	}
-	$sql = "SELECT OBJECTID FROM UGS_NGWMN_MONITORING_LOCATIONS WHERE SiteID IN (" . $siteIDs . ");";
+	$siteVals = explode(',', $siteIDs);
+	$sitePh = array();
+	foreach ($siteVals as $i => $v) { $sitePh[] = '$' . ($i + 1); }
+	$sql = "SELECT OBJECTID FROM UGS_NGWMN_MONITORING_LOCATIONS WHERE SiteID IN (" . implode(',', $sitePh) . ")";
 	
 	/// $res = mssql_query($sql, $conn);
-	$res = pg_query($conn, $sql);
+	$res = pg_query_params($conn, $sql, $siteVals);
 
 	if($res === false)
 	{
@@ -92,7 +99,10 @@ function makeCSV($wellIDs){
 	//$sql = "SELECT AltLocationID, LocationType, HorizontalCoordRefSystem, LocationName, USGS_ID, WRNum, WIN, Latitude, Longitude, VerticalMeasure, Offset, WELLDEPTH, Name, BaroEfficiency, LoggerType, CAST(BaroEfficiencyStart as varchar(19)), BaroLoggerType, CAST(CONVERT(numeric(20,2), MIN(LithologyDepthFrom)) as NVARCHAR(50)) as MinFrom, CAST(CONVERT(numeric(20,2), MAX(LithologyDepthTo)) as NVARCHAR(50)) as MaxTo, LithologyDepthToUnit FROM UGS_NGWMN_MONITORING_LOCATIONS ml left join UGS_NGWMN_LITHOLOGY l on SiteNo = LocationID LEFT JOIN UGS_NGWMN_LOCAL_AQUIFER LA ON Code = AquiferName WHERE OBJECTID IN (". $wellIDs . ")";
 	// new
 	// wrong atempt #1$sql = "SELECT altlocationid, locationType, horizontalcoordrefsystem, locationname, usgs_id, wrnum, win, latitude, longitude, verticalmeasure, stickup as offset, welldepth, baroefficiency, loggertype, aquifername as name, to_char(baroefficiencystart,'MM/DD/YYYY'), BaroLoggerType, MinFrom, MaxTo FROM ( SELECT CAST(siteno as VARCHAR(50)), CAST(MIN(lithologydepthfrom) as VARCHAR(50)) as MinFrom, CAST(MAX(lithologydepthto) as VARCHAR(50)) as MaxTo FROM ugs_ngwmn_lithology GROUP BY siteno) l RIGHT JOIN ugs_ngwmn_monitoring_locations ON siteno = locationid WHERE OBJECTID IN(". $wellIDs . ")";
-	$sql = "SELECT altlocationid, locationType, horizontalcoordrefsystem, locationname, usgs_id, wrnum, win, latitude, longitude, verticalmeasure, stickup as offset, ml.objectid, welldepth, baroefficiency, loggertype, la.aquifername as Name, to_char(baroefficiencystart,'MM/DD/YYYY'), BaroLoggerType, CAST(siteno as VARCHAR(50)), CAST(MIN(lithologydepthfrom) as VARCHAR(50)) as MinFrom, CAST(MAX(lithologydepthto) as VARCHAR(50)) as MaxTo, LithologyDepthToUnit FROM UGS_NGWMN_MONITORING_LOCATIONS ml left join UGS_NGWMN_LITHOLOGY l on SiteNo = LocationID LEFT JOIN UGS_NGWMN_LOCAL_AQUIFER LA ON Code = la.aquifername WHERE ml.objectid IN (". $wellIDs . ")";
+	$wellVals = explode(',', $wellIDs);
+	$wellPh = array();
+	foreach ($wellVals as $i => $v) { $wellPh[] = '$' . ($i + 1); }
+	$sql = "SELECT altlocationid, locationType, horizontalcoordrefsystem, locationname, usgs_id, wrnum, win, latitude, longitude, verticalmeasure, stickup as offset, ml.objectid, welldepth, baroefficiency, loggertype, la.aquifername as Name, to_char(baroefficiencystart,'MM/DD/YYYY'), BaroLoggerType, CAST(siteno as VARCHAR(50)), CAST(MIN(lithologydepthfrom) as VARCHAR(50)) as MinFrom, CAST(MAX(lithologydepthto) as VARCHAR(50)) as MaxTo, LithologyDepthToUnit FROM UGS_NGWMN_MONITORING_LOCATIONS ml left join UGS_NGWMN_LITHOLOGY l on SiteNo = LocationID LEFT JOIN UGS_NGWMN_LOCAL_AQUIFER LA ON Code = la.aquifername WHERE ml.objectid IN (" . implode(',', $wellPh) . ")";
 
 	// this shouldn't have changed?  test & see if it needs to be converted too.
 	//$sql .= " GROUP BY AltLocationID, LocationType, HorizontalCoordRefSystem, LocationName, USGS_ID, WRNum, WIN, Latitude, Longitude, VerticalMeasure, Offset, WELLDEPTH, Name, BaroEfficiency, LoggerType, BaroEfficiencyStart, BaroLoggerType, LithologyDepthToUnit;";
@@ -100,7 +110,7 @@ function makeCSV($wellIDs){
 	$sql .= " GROUP BY altlocationid, ml.locationtype,ml.locationid, ml.horizontalcoordrefsystem, locationname,l.siteno,l.lithologydepthtounit,ml.objectid, la.aquifername, USGS_ID, WRNum, WIN, Latitude, Longitude, VerticalMeasure, stickup, WELLDEPTH, BaroEfficiency, LoggerType, BaroEfficiencyStart, BaroLoggerType;";
 
 	/// $res = mssql_query($sql, $conn);
-	$res = pg_query($conn, $sql);
+	$res = pg_query_params($conn, $sql, $wellVals);
 
 	if($res === false)
 	{
@@ -205,7 +215,7 @@ function makeCSV($wellIDs){
 				// Setup
 				if(strtotime($fromdate) < strtotime($todate))
 				{
-					$sql .= " AND READINGDATE BETWEEN CAST('" . $fromdate ."' AS DATE) AND CAST('" . $todate . "' AS DATE)";
+					$sql .= " AND READINGDATE BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)";
 				}
 				
 				$sql .= " ORDER BY READINGDATE;";
@@ -218,7 +228,7 @@ function makeCSV($wellIDs){
 				// Setup
 				if(strtotime($fromdate) < strtotime($todate))
 				{
-					$sql .= " AND READINGDATE BETWEEN CAST('" . $fromdate ."' AS DATE) AND CAST('" . $todate . "' AS DATE)";
+					$sql .= " AND READINGDATE BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)";
 				}
 				
 				$sql .= " GROUP by TO_CHAR(READINGDATE, 'DD/MM/YYYY'), CAST(READINGDATE as Date) ORDER BY CAST(READINGDATE as date);";			
@@ -231,7 +241,7 @@ function makeCSV($wellIDs){
 				// Setup
 				if(strtotime($fromdate) < strtotime($todate))
 				{
-					$sql .= " AND READINGDATE BETWEEN CAST('" . $fromdate ."' AS DATE) AND CAST('" . $todate . "' AS DATE)";
+					$sql .= " AND READINGDATE BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)";
 				}
 				
 				//$sql .= " GROUP by CAST(EXTRACT(YEAR FROM READINGDATE) AS varchar) || '-' || RIGHT ('00'+ CAST (MONTH(READINGDATE) AS varchar), 2), +CAST(EXTRACT(MONTH FROM READINGDATE) AS varchar) || '/' || +CAST(EXTRACT(YEAR FROM READINGDATE) AS varchar) order by dtOrder;";
@@ -247,7 +257,7 @@ function makeCSV($wellIDs){
 
 				if(strtotime($fromdate) < strtotime($todate))
 				{
-					$sql .= " AND FLOWDATE BETWEEN CAST('" . $fromdate ."' AS DATE) AND CAST('" . $todate . "' AS DATE)";
+					$sql .= " AND FLOWDATE BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)";
 				}
 				
 				$sql .= " ORDER BY CAST(FLOWDATE as date);";
@@ -258,7 +268,7 @@ function makeCSV($wellIDs){
 				
 				if(strtotime($fromdate) < strtotime($todate))
 				{
-					$sql .= " AND FLOWDATE BETWEEN CAST('" . $fromdate ."' AS DATE) AND CAST('" . $todate . "' AS DATE)";
+					$sql .= " AND FLOWDATE BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)";
 				}
 				
 				$sql .= " group by TO_CHAR(FLOWDATE, 'DD/MM/YYYY'), CAST(FLOWDATE as Date), c.Comment ORDER BY CAST(FLOWDATE as date);";
@@ -270,7 +280,7 @@ function makeCSV($wellIDs){
 				
 				if(strtotime($fromdate) < strtotime($todate))
 				{
-					$sql .= " AND FLOWDATE BETWEEN CAST('" . $fromdate ."' AS DATE) AND CAST('" . $todate . "' AS DATE)";
+					$sql .= " AND FLOWDATE BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)";
 				}
 				
 				//old $sql .= " group by CAST(EXTRACT(YEAR FROM FLOWDATE) AS varchar) || '-' || RIGHT ('00' CAST (MONTH(FLOWDATE) AS varchar), 2), CAST(EXTRACT(MONTH FROM FLOWDATE) AS varchar) || '/' || CAST(EXTRACT(YEAR FROM FLOWDATE) AS varchar), c.Comment order by dtOrder;";
@@ -287,7 +297,8 @@ function makeCSV($wellIDs){
 		$fh = fopen($filename, 'w') or die("Cannot open file for writing.");
 
 		/// $res2 = mssql_query($sql, $conn);
-		$res2 = pg_query($conn, $sql);
+		$dateParams = (strpos($sql, '$1') !== false) ? array($fromdate, $todate) : array();
+		$res2 = pg_query_params($conn, $sql, $dateParams);
 //echo "<br>sql query: ".$sql;
 		if($res2 === false)
 		{
