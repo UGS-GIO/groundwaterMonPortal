@@ -29,6 +29,10 @@ if(!$conn)
 
 if(isset($_POST['wellIDs'])){
 	$wellIDs = $_POST['wellIDs'];
+	// Only a comma-separated list of integer IDs may reach the IN(...) queries below (SQLi guard).
+	if (!preg_match('/^\d+(,\d+)*$/', $wellIDs)) {
+		die("Invalid well ID provided.");
+	}
 //	$allIDs = explode(",", $wellIDs);
 }
 else{
@@ -54,6 +58,10 @@ if(isset($_POST['type']))
 if(isset($_POST['siteIDs']))
 {
 	$siteIDs = $_POST['siteIDs'];
+	// Only a comma-separated list of integer IDs may reach the IN(...) query (SQLi guard).
+	if (!preg_match('/^\d+(,\d+)*$/', $siteIDs)) {
+		die("Invalid site ID provided.");
+	}
 	$sql = "SELECT OBJECTID FROM UGS_NGWMN_MONITORING_LOCATIONS WHERE SiteID IN (" . $siteIDs . ");";
 	
 	/// $res = mssql_query($sql, $conn);
