@@ -22,3 +22,7 @@ maintenance — prefer minimal, in-style fixes over refactors.
 ## Correctness
 - Fail loud on failed PHP responses / DB errors — return a real error; don't emit empty or partial
   JSON that silently blanks the grid.
+
+## Review scope & severity
+- Skip (don't post findings): vendored libs (`public/js/select2-4.0.3/`, `public/js/tablesorter/`, `public/css/tablesorter/`), minified bundles (`*.min.js`), and `package-lock.json`.
+- Blocking here (not a nit): merge to `master` auto-deploys to prod, so any new request-input-to-SQL path or committed credential is a blocker, not a nit.
