@@ -1,2 +1,4 @@
 images/
 node_modules/
+# DB credentials (deployed out-of-band, never commit)
+dbconfig.php
